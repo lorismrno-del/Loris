@@ -1,0 +1,18 @@
+{
+  "firmenname": "Lorino Co. Digital Solutions",
+  "targetIndustry": "Handwerker",
+  "targetRegion": "Schweiz",
+  "companiesPerRun": 10,
+  "driveFolderUrl": "",
+  "times": ["07:30", "09:00", "11:45", "14:25", "16:40"],
+  "templateA": {
+    "label": "Mit Webseite",
+    "subject": "Kurze Frage zu Ihrer Webseite, {{firma}}",
+    "body": "Guten Tag,\n\nich habe mir die Webseite von {{firma}} angesehen und wollte mich kurz melden.\n\n[Hier Ihren personalisierten Text zur bestehenden Webseite einfügen]\n\nFalls angehängt, finden Sie hier weitere Unterlagen: {{pdf_link}}\n\nFreundliche Grüsse\n{{absender}}\n{{firmenname}}"
+  },
+  "templateB": {
+    "label": "Ohne Webseite",
+    "subject": "Digitale Sichtbarkeit für {{firma}}",
+    "body": "Guten Tag,\n\nmir ist aufgefallen, dass {{firma}} noch keine eigene Webseite hat.\n\n[Hier Ihren personalisierten Text zum Fehlen der Webseite einfügen]\n\nFalls angehängt, finden Sie hier weitere Unterlagen: {{pdf_link}}\n\nFreundliche Grüsse\n{{absender}}\n{{firmenname}}"
+  }
+}
