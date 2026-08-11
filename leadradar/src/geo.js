@@ -142,6 +142,39 @@ for (const [code, [name, lat, lng, radius]] of Object.entries(CANTONS)) {
   PLACE_INDEX.set(normalize(name.replace(/^Kanton /, '')), entry);
 }
 
+/**
+ * Raster für den Schweiz-weiten Scan.
+ *
+ * Statt die Schweiz mit einem Riesenkreis abzudecken (dabei gehen bei jeder
+ * Datenquelle Treffer verloren, weil ein Limit greift), wird Ort für Ort
+ * gesucht. Das eingebaute Städteverzeichnis deckt alle 26 Kantone ab und
+ * liegt dort, wo auch die Betriebe sind.
+ *
+ * Doppelte Treffer zwischen benachbarten Orten fängt die Speicherung ab.
+ */
+export function schweizRaster({ kantone } = {}) {
+  const gewuenscht = kantone && kantone.length ? new Set(kantone) : null;
+
+  const orte = PLACES
+    .filter(([, , , , canton]) => !gewuenscht || gewuenscht.has(canton))
+    .map(([name, lat, lng, radiusKm, canton]) => ({ name, lat, lng, radiusKm, canton }));
+
+  // Kantone ohne Stadt im Verzeichnis über ihr Zentrum abdecken
+  const abgedeckt = new Set(orte.map((o) => o.canton));
+  for (const [code, [name, lat, lng, radiusKm]] of Object.entries(CANTONS)) {
+    if (gewuenscht && !gewuenscht.has(code)) continue;
+    if (abgedeckt.has(code)) continue;
+    orte.push({ name, lat, lng, radiusKm, canton: code });
+  }
+
+  return orte;
+}
+
+/** Alle Kantonskürzel, für die Auswahl im UI. */
+export function alleKantone() {
+  return Object.entries(CANTONS).map(([code, [name]]) => ({ code, name }));
+}
+
 /** Liste für die Autovervollständigung im UI. */
 export function listPlaces() {
   return {

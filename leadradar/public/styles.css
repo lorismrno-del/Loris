@@ -344,6 +344,123 @@ input[type=range] { width: 100%; accent-color: var(--blau); }
 }
 .webhook-row input { font-size: 13px; padding: 7px 9px; }
 
+/* ------------------------------------------------------------ Anruf-Modus */
+.tagesleiste {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(78px, 1fr));
+  gap: 8px; margin-bottom: 12px;
+}
+.tages-kpi {
+  background: var(--weiss); border: 1px solid var(--grau-200);
+  border-radius: 10px; padding: 9px 10px; text-align: center;
+}
+.tages-kpi b { display: block; font-size: 19px; font-weight: 750; line-height: 1.1; }
+.tages-kpi span { font-size: 11px; color: var(--grau-500); }
+.tages-rest { background: var(--blau-hell); border-color: #bfdbfe; }
+.tages-rest b { color: var(--blau); }
+
+.anruf-filter { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+.anruf-filter select { flex: 1 1 150px; width: auto; font-size: 13px; padding: 8px 10px; }
+
+.anrufkarte {
+  background: var(--weiss); border: 1px solid var(--grau-200);
+  border-radius: var(--radius-lg); padding: 22px; box-shadow: var(--schatten);
+}
+.ak-position {
+  font-size: 12px; font-weight: 700; color: var(--grau-500);
+  text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px;
+}
+.ak-kopf h2 { font-size: 25px; line-height: 1.15; letter-spacing: -.02em; }
+.ak-ort { font-size: 14px; color: var(--grau-500); margin-top: 3px; }
+.ak-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 11px; }
+
+.ak-problem {
+  margin: 18px 0; padding: 14px 16px;
+  background: #fff7ed; border: 1px solid #fed7aa; border-radius: 10px;
+  font-size: 16px; color: #9a3412;
+}
+
+.ak-anrufen {
+  width: 100%; padding: 18px; font-size: 20px; font-weight: 700;
+  letter-spacing: .01em; border-radius: 12px;
+}
+
+.ak-skript {
+  margin-top: 18px; padding: 15px 16px;
+  background: var(--blau-hell); border: 1px solid #bfdbfe; border-radius: 10px;
+}
+.ak-skript h4 { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--blau-dunkel); margin-bottom: 7px; }
+.ak-skript p { font-size: 15.5px; line-height: 1.6; white-space: pre-wrap; }
+
+.ak-abschnitt { margin-top: 20px; }
+.ak-abschnitt > h4 {
+  font-size: 12px; text-transform: uppercase; letter-spacing: .05em;
+  color: var(--grau-500); margin-bottom: 9px; font-weight: 700;
+}
+.ak-ergebnisse { display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 7px; }
+.ergebnis-btn {
+  display: flex; align-items: center; gap: 8px;
+  border: 1.5px solid var(--grau-300); background: var(--weiss);
+  border-radius: 10px; padding: 11px 12px; cursor: pointer;
+  font-size: 13.5px; font-weight: 500; text-align: left;
+  transition: all .1s;
+}
+.ergebnis-btn:hover { background: var(--grau-50); transform: translateY(-1px); box-shadow: var(--schatten); }
+.ergebnis-btn:active { transform: translateY(0); }
+.ergebnis-emoji { font-size: 17px; line-height: 1; }
+
+.ak-werkzeuge { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 18px; }
+.ak-mehr { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--grau-200); }
+.ak-mehr summary { cursor: pointer; font-size: 13.5px; color: var(--blau); font-weight: 600; }
+.ak-mehr .script-step { margin-top: 10px; }
+
+/* ------------------------------------------------------------------ Karte */
+.karte-kopf {
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 10px; margin-bottom: 10px;
+}
+.karte-legende { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--grau-600); }
+.karte-legende span { display: inline-flex; align-items: center; gap: 5px; }
+.karte-legende i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+.karte-wrap { position: relative; }
+.karte {
+  position: relative; overflow: hidden; cursor: grab;
+  height: min(72vh, 680px); border-radius: var(--radius-lg);
+  border: 1px solid var(--grau-200); background: #e8eef3;
+  touch-action: none; user-select: none;
+}
+.karte-tiles, .karte-marker { position: absolute; inset: 0; }
+.karte-marker { pointer-events: none; }
+.kachel { position: absolute; width: 256px; height: 256px; }
+.kartenpunkt {
+  position: absolute; border-radius: 50%; border: 2px solid #fff;
+  transform: translate(-50%, -50%); cursor: pointer; padding: 0;
+  box-shadow: 0 1px 4px rgba(15,23,42,.4); pointer-events: auto;
+}
+.kartenpunkt:hover { transform: translate(-50%, -50%) scale(1.5); z-index: 5; }
+.karte-zoom { position: absolute; top: 12px; right: 12px; display: flex; flex-direction: column; gap: 6px; }
+.karte-zoom .icon-btn { background: rgba(255,255,255,.95); font-weight: 700; }
+.karte-attribution {
+  position: absolute; bottom: 6px; right: 10px;
+  font-size: 10.5px; color: var(--grau-600);
+  background: rgba(255,255,255,.8); padding: 2px 7px; border-radius: 5px;
+}
+
+/* -------------------------------------------------------- Branchen-Gruppen */
+.chip-gruppe {
+  display: flex; align-items: baseline; gap: 10px;
+  margin: 14px 0 7px;
+}
+.chip-gruppe:first-child { margin-top: 0; }
+.chip-gruppe-titel {
+  font-size: 11.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .05em; color: var(--grau-500);
+}
+.chips-klein { gap: 5px; }
+.chip-klein { padding: 5px 10px; font-size: 12px; font-weight: 600; min-width: 40px; text-align: center; }
+
+.panel-schweiz { border-color: #fde68a; background: #fffbeb; }
+
 /* ------------------------------------------------------------------- Modal */
 .modal {
   position: fixed; inset: 0; z-index: 80;
@@ -397,4 +514,14 @@ input[type=range] { width: 100%; accent-color: var(--blau); }
   .kpi { padding: 8px 9px; }
   .kpi-value { font-size: 17px; }
   .kpi-label { font-size: 10.5px; }
+
+  /* Anruf-Modus: Daumen-freundliche Flächen */
+  .anrufkarte { padding: 16px; }
+  .ak-kopf h2 { font-size: 21px; }
+  .ak-ergebnisse { grid-template-columns: 1fr 1fr; }
+  .ergebnis-btn { padding: 13px 10px; font-size: 12.5px; }
+  .ak-anrufen { padding: 20px; font-size: 19px; position: sticky; bottom: 8px; z-index: 5; }
+  .karte { height: 62vh; }
+  .karte-legende { font-size: 11px; gap: 8px; }
+  .tab { font-size: 12px; padding: 8px 2px; }
 }

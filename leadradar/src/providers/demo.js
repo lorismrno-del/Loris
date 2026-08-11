@@ -32,6 +32,14 @@ const DEMO = [
   ['Küchenwerkstatt Lang', 'kuechenbau', 'Uster', '8610', '+41445550342', 'https://kuechen-lang.example', 'info@kuechen-lang.example', 4.9, 72, 1, 'ok'],
   ['Umzüge Krasniqi', 'umzug', 'Zürich', '8050', '+41445550353', 'http://umzuege-krasniqi.example', '', 4.0, 26, 12, 'nossl'],
   ['Gebäudereinigung Sutter', 'umzug', 'Winterthur', '8400', '+41525550364', '', 'sutter@reinigung.example', 4.6, 17, 9, 'none'],
+
+  // Betriebe mit schwacher Google-Präsenz - zeigen die Bewertungsfilter
+  ['Schreinerei Odermatt', 'schreiner', 'Kloten', '8302', '+41445550375', '', '', null, 0, null, 'none'],
+  ['Malerbetrieb Rüegg', 'maler', 'Uster', '8610', '+41445550386', 'http://maler-rueegg.example', '', 2.9, 11, 16, 'outdated'],
+  ['Sanitär Berisha', 'sanitaer', 'Dietikon', '8953', '+41445550397', '', '', 3.2, 6, 24, 'none'],
+  ['Elektro Frei AG', 'elektriker', 'Bülach', '8180', '+41445550408', 'https://elektro-frei.example', 'info@elektro-frei.example', null, 0, null, 'nomobile'],
+  ['Gartenpflege Tanner', 'gartenbau', 'Horgen', '8810', '+41445550419', '', '', 3.8, 3, 30, 'none'],
+  ['Bedachungen Lüthi', 'dachdecker', 'Wädenswil', '8820', '+41445550420', 'http://luethi-dach.example', '', 3.4, 8, 19, 'dead'],
 ];
 
 const CITY_COORDS = {
@@ -117,7 +125,8 @@ export function searchDemo({ trades, limit = 200 }) {
       googleRating: rating,
       googleReviews: reviews,
       googleMapsUrl: '',
-      lastActivityAt: new Date(Date.now() - monthsAgo * monthMs).toISOString(),
+      // Ohne Bewertungen gibt es auch kein Datum der letzten Aktivität
+      lastActivityAt: monthsAgo == null ? null : new Date(Date.now() - monthsAgo * monthMs).toISOString(),
       audit: demoAudit(kind, website),
       isDemo: true,
     });

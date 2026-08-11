@@ -122,7 +122,8 @@ async function searchOnce({ textQuery, lat, lng, radiusKm, pageToken }) {
 }
 
 /** Führt für jede Branche mehrere Suchbegriffe aus und führt die Treffer zusammen. */
-export async function searchGoogle({ trades, place, lat, lng, radiusKm, limit = 200 }) {
+export async function searchGoogle({ trades, place, lat, lng, radiusKm, limit = 200, maxPages }) {
+  const seitenLimit = Number.isFinite(maxPages) ? maxPages : config.google.maxPages;
   if (!config.google.apiKey) {
     throw new Error(
       'Kein Google-API-Key hinterlegt. Trage GOOGLE_PLACES_API_KEY in die .env ein oder wähle OpenStreetMap als Quelle.',
@@ -139,7 +140,7 @@ export async function searchGoogle({ trades, place, lat, lng, radiusKm, limit = 
     for (const term of trade.google) {
       const textQuery = `${term} ${place}`.trim();
       let pageToken;
-      for (let page = 0; page < config.google.maxPages; page++) {
+      for (let page = 0; page < seitenLimit; page++) {
         let data;
         try {
           data = await searchOnce({ textQuery, lat, lng, radiusKm, pageToken });

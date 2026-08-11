@@ -12,8 +12,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { config, hasGoogle, ROOT } from './src/config.js';
-import { TRADES, TRADE_BY_ID } from './src/trades.js';
-import { resolvePlace, listPlaces, distanceKm } from './src/geo.js';
+import { TRADES, TRADE_BY_ID, GRUPPEN } from './src/trades.js';
+import { resolvePlace, listPlaces, distanceKm, schweizRaster, alleKantone } from './src/geo.js';
 import { searchOsm } from './src/providers/osm.js';
 import { searchGoogle } from './src/providers/google.js';
 import { searchDemo } from './src/providers/demo.js';
@@ -28,7 +28,7 @@ import {
   schutzAktiv, istAngemeldet, passwortStimmt, erstelleToken,
   setzeCookie, loescheCookie, zuVieleVersuche, versuchZaehlen,
 } from './src/auth.js';
-import { createJob, getJob, setStep, finishJob, failJob } from './src/jobs.js';
+import { createJob, getJob, setStep, finishJob, failJob, stopJob, cancelJob } from './src/jobs.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, 'public');
@@ -187,6 +187,95 @@ async function runSearch(job, params) {
   return { added, updated, found: found.length, place: center.name, radiusKm: center.radiusKm };
 }
 
+/**
+ * Schweiz-weiter Scan: sucht Ort für Ort das ganze Raster ab.
+ *
+ * Läuft je nach Umfang eine Weile - deshalb jederzeit abbrechbar, und was
+ * bis dahin gefunden wurde, ist bereits gespeichert.
+ */
+async function runSchweizScan(job, params) {
+  const { source = 'osm', trades = [], kantone = [], limitProOrt = 60, doAudit = true } = params;
+
+  const validTrades = trades.filter((t) => TRADE_BY_ID.has(t));
+  if (validTrades.length === 0) throw new Error('Bitte mindestens eine Branche auswählen.');
+
+  const orte = schweizRaster({ kantone });
+  if (orte.length === 0) throw new Error('Keine Orte im gewählten Gebiet.');
+
+  let gesamtNeu = 0;
+  let gesamtAktualisiert = 0;
+  let gesamtGefunden = 0;
+  const fehler = [];
+  job.total = orte.length;
+
+  for (let i = 0; i < orte.length; i++) {
+    if (job.abbruch) {
+      const teilergebnis = { added: gesamtNeu, updated: gesamtAktualisiert, found: gesamtGefunden, orte: i, orteTotal: orte.length, fehler };
+      await Promise.all([store.saveLeads(), store.saveState()]);
+      cancelJob(job, teilergebnis);
+      return teilergebnis;
+    }
+
+    const ort = orte[i];
+    job.done = i;
+    job.step = `${ort.name} (${ort.canton}) – Ort ${i + 1} von ${orte.length} · ${gesamtNeu} neue Leads`;
+
+    try {
+      let treffer = [];
+      if (source === 'google') {
+        treffer = await searchGoogle({
+          trades: validTrades, place: ort.name, lat: ort.lat, lng: ort.lng,
+          radiusKm: ort.radiusKm, limit: limitProOrt,
+          // Beim Flächenscan nur die erste Seite - sonst explodieren die Kosten
+          maxPages: 1,
+        });
+      } else if (source === 'demo') {
+        treffer = searchDemo({ trades: validTrades, limit: limitProOrt });
+      } else {
+        treffer = await searchOsm({
+          trades: validTrades, lat: ort.lat, lng: ort.lng,
+          radiusKm: ort.radiusKm, limit: limitProOrt,
+        });
+        // Overpass ist ein Gemeinschaftsdienst - zwischen den Orten kurz warten
+        await new Promise((r) => setTimeout(r, 1200));
+      }
+
+      gesamtGefunden += treffer.length;
+
+      // Nur Betriebe prüfen, die wir noch nicht kennen
+      const neue = treffer.filter((l) => !store.getLead(l.id) && !l.audit);
+      if (doAudit && neue.length) {
+        job.step = `${ort.name}: ${neue.length} Webseiten werden geprüft …`;
+        const audits = await auditMany(neue);
+        neue.forEach((lead, k) => { lead.audit = audits[k]; });
+      }
+
+      for (const lead of treffer) enrichLead(lead);
+      const { added, updated } = store.upsertLeads(treffer);
+      gesamtNeu += added;
+      gesamtAktualisiert += updated;
+
+      // Nach jedem Ort speichern - ein Abbruch kostet dann höchstens einen Ort
+      await store.saveLeads();
+    } catch (err) {
+      fehler.push(`${ort.name}: ${err.message}`);
+      // Ein kaputter Ort darf den ganzen Scan nicht stoppen
+    }
+  }
+
+  job.done = orte.length;
+  store.recordSearch({
+    source, trades: validTrades, place: `Schweiz-Scan (${orte.length} Orte)`,
+    found: gesamtGefunden, added: gesamtNeu,
+  });
+  await Promise.all([store.saveLeads(), store.saveState()]);
+
+  return {
+    added: gesamtNeu, updated: gesamtAktualisiert, found: gesamtGefunden,
+    orte: orte.length, orteTotal: orte.length, fehler,
+  };
+}
+
 // ------------------------------------------------------------------- Filterung
 
 function filterLeads(query) {
@@ -233,6 +322,16 @@ function filterLeads(query) {
 
   const city = query.get('city');
   if (city && city !== 'alle') leads = leads.filter((l) => l.address?.city === city);
+
+  const canton = query.get('canton');
+  if (canton && canton !== 'alle') leads = leads.filter((l) => l.address?.canton === canton);
+
+  // Google-Präsenz: genau das, was den Aufhänger fürs Gespräch liefert
+  const reviews = query.get('reviews');
+  if (reviews && reviews !== 'alle') leads = leads.filter((l) => l.bewertungsKlasse === reviews);
+
+  const rating = query.get('rating');
+  if (rating && rating !== 'alle') leads = leads.filter((l) => l.sterneKlasse === rating);
 
   const sort = query.get('sort') || 'score';
   const cmp = {
@@ -290,7 +389,10 @@ async function handleApi(req, res, url) {
       settings: getSettings(),
       schutzAktiv: schutzAktiv(),
       trades: TRADES,
+      gruppen: GRUPPEN,
       statuses: store.STATUSES,
+      anrufErgebnisse: store.ANRUF_ERGEBNISSE,
+      kantone: alleKantone(),
       places: listPlaces(),
       sources: [
         { id: 'osm', label: 'OpenStreetMap (gratis)', available: true,
@@ -323,6 +425,44 @@ async function handleApi(req, res, url) {
     return json(res, 202, { jobId: job.id });
   }
 
+  // ---- Schweiz-weiter Scan
+  if (pathname === '/api/scan-schweiz' && method === 'POST') {
+    const params = await readBody(req);
+    const job = createJob('Schweiz-Scan');
+    runSchweizScan(job, params)
+      .then((result) => { if (!job.abgebrochen) finishJob(job, result); })
+      .catch((err) => {
+        console.error('[schweiz-scan]', err);
+        failJob(job, err);
+      });
+    return json(res, 202, { jobId: job.id });
+  }
+
+  // ---- Umfang eines Scans abschätzen (bevor er Geld kostet)
+  if (pathname === '/api/scan-schweiz/vorschau' && method === 'POST') {
+    const { kantone = [], trades = [], source = 'osm' } = await readBody(req);
+    const orte = schweizRaster({ kantone });
+    const anzahlBranchen = trades.filter((t) => TRADE_BY_ID.has(t)).length || 1;
+    // Google: ein Aufruf je Suchbegriff und Ort; OSM: ein Aufruf je Ort
+    const suchbegriffe = trades
+      .map((t) => TRADE_BY_ID.get(t)?.google.length || 0)
+      .reduce((a, b) => a + b, 0) || anzahlBranchen;
+
+    const anfragen = source === 'google' ? orte.length * suchbegriffe : orte.length;
+    // Erfahrungswert: OSM ca. 4 s pro Ort inkl. Pause, Google ca. 1.5 s je Anfrage
+    const sekunden = source === 'google' ? anfragen * 1.5 : orte.length * 4;
+
+    return json(res, 200, {
+      orte: orte.length,
+      kantone: [...new Set(orte.map((o) => o.canton))].length,
+      anfragen,
+      minutenGeschaetzt: Math.ceil(sekunden / 60),
+      kostenHinweis: source === 'google'
+        ? `Rund ${anfragen} Google-Anfragen. Prüfe dein Guthaben in der Google Cloud Console, bevor du startest.`
+        : 'OpenStreetMap ist gratis. Zwischen den Orten wird bewusst kurz gewartet, damit der Gemeinschaftsdienst nicht überlastet wird.',
+    });
+  }
+
   // ---- Job-Fortschritt
   const jobMatch = /^\/api\/jobs\/([\w]+)$/.exec(pathname);
   if (jobMatch && method === 'GET') {
@@ -331,7 +471,13 @@ async function handleApi(req, res, url) {
     return json(res, 200, {
       id: job.id, state: job.state, step: job.step, done: job.done,
       total: job.total, result: job.result, error: job.error,
+      abgebrochen: job.abgebrochen || false,
     });
+  }
+
+  if (jobMatch && method === 'DELETE') {
+    const ok = stopJob(jobMatch[1]);
+    return json(res, ok ? 200 : 404, { gestoppt: ok });
   }
 
   // ---- Leads auflisten
@@ -339,15 +485,37 @@ async function handleApi(req, res, url) {
     const leads = filterLeads(url.searchParams);
     const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
     const perPage = Math.min(500, Math.max(10, Number(url.searchParams.get('perPage')) || 100));
-    const cities = [...new Set(store.allLeads().map((l) => l.address?.city).filter(Boolean))].sort(
+    const alle = store.allLeads();
+    const cities = [...new Set(alle.map((l) => l.address?.city).filter(Boolean))].sort(
       (a, b) => a.localeCompare(b, 'de'),
     );
+    const cantons = [...new Set(alle.map((l) => l.address?.canton).filter(Boolean))].sort();
     return json(res, 200, {
       total: leads.length,
       page,
       perPage,
       cities,
+      cantons,
       leads: leads.slice((page - 1) * perPage, page * perPage),
+    });
+  }
+
+  // ---- Punkte für die Kartenansicht (schlank gehalten, alle auf einmal)
+  if (pathname === '/api/karte' && method === 'GET') {
+    const leads = filterLeads(url.searchParams).filter((l) => l.lat != null && l.lng != null);
+    return json(res, 200, {
+      total: leads.length,
+      punkte: leads.slice(0, 3000).map((l) => ({
+        id: l.id,
+        name: l.name,
+        lat: l.lat,
+        lng: l.lng,
+        score: l.score ?? 0,
+        farbe: l.tier?.color || '#64748b',
+        ort: l.address?.city || '',
+        problem: l.headline || '',
+        telefon: l.customPhone || l.phone || '',
+      })),
     });
   }
 
@@ -421,6 +589,32 @@ async function handleApi(req, res, url) {
     lead.lastContactAt = new Date().toISOString();
     await store.saveLeads();
     return json(res, 200, { activity, lead });
+  }
+
+  // ---- Anrufergebnis festhalten (Combox, Termin, kein Interesse …)
+  const ergebnisMatch = /^\/api\/leads\/([^/]+)\/anruf$/.exec(pathname);
+  if (ergebnisMatch && method === 'POST') {
+    const { ergebnis, notiz, datum } = await readBody(req);
+    const antwort = store.anrufErgebnis(decodeURIComponent(ergebnisMatch[1]), ergebnis, { notiz, datum });
+    if (!antwort) return json(res, 404, { error: 'Lead nicht gefunden' });
+    if (antwort.error) return json(res, 400, antwort);
+    await store.saveLeads();
+    return json(res, 200, antwort);
+  }
+
+  // ---- Anruf-Warteschlange: wer ist als Nächstes dran?
+  if (pathname === '/api/warteschlange' && method === 'GET') {
+    const leads = store.anrufWarteschlange({
+      trade: url.searchParams.get('trade'),
+      city: url.searchParams.get('city'),
+      canton: url.searchParams.get('canton'),
+      minScore: Number(url.searchParams.get('minScore')) || 0,
+    });
+    return json(res, 200, {
+      total: leads.length,
+      leads: leads.slice(0, 200),
+      heute: store.tagesStatistik(),
+    });
   }
 
   // ---- Website erneut prüfen

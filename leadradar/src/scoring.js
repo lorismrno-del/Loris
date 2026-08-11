@@ -122,6 +122,37 @@ export function scoreLead(lead) {
       break;
   }
 
+  // ---------- BEDARF TEIL 2: Google-Präsenz ----------
+  // Wenige oder schlechte Bewertungen sind ein eigenes Verkaufsargument.
+  //
+  // Wichtig: nur bewerten, wenn die Datenquelle überhaupt Bewertungen liefert.
+  // OpenStreetMap kennt keine - dort hiesse "0 Bewertungen" nur "wir wissen es
+  // nicht", und der Betrieb bekäme fälschlich Punkte für ein Problem, das
+  // vielleicht gar nicht existiert.
+  if (hatBewertungsDaten(lead)) {
+    const anzahl = lead.googleReviews ?? 0;
+    const sterne = lead.googleRating ?? 0;
+
+    if (anzahl === 0) {
+      need += 12;
+      reasons.push(reason('keine_bewertungen', 'Keine einzige Google-Bewertung', 12));
+    } else if (anzahl < 5) {
+      need += 9;
+      reasons.push(reason('sehr_wenig_bewertungen', `Nur ${anzahl} Google-Bewertungen`, 9));
+    } else if (anzahl < 15) {
+      need += 5;
+      reasons.push(reason('wenig_bewertungen', `Erst ${anzahl} Google-Bewertungen`, 5));
+    }
+
+    if (anzahl >= 3 && sterne > 0 && sterne < 3.5) {
+      need += 8;
+      reasons.push(reason('schlechte_bewertung', `Schwache Bewertung: ${sterne}★`, 8));
+    } else if (anzahl >= 3 && sterne >= 3.5 && sterne < 4.0) {
+      need += 4;
+      reasons.push(reason('mittlere_bewertung', `Nur ${sterne}★ im Schnitt`, 4));
+    }
+  }
+
   need = Math.min(MAX_NEED, need);
 
   // ---------- QUALITÄT / ATTRAKTIVITÄT ----------
@@ -208,6 +239,30 @@ function headlineFor(lead, a) {
   }
 }
 
+/** Liefert die Quelle überhaupt Bewertungsdaten? OSM tut das nicht. */
+export function hatBewertungsDaten(lead) {
+  return lead.source === 'google' || lead.source === 'demo' || lead.googleReviews != null;
+}
+
+/**
+ * Einordnung der Google-Präsenz - dient als Filter im UI
+ * ("zeig mir alle mit wenig Bewertungen").
+ */
+export function bewertungsKlasse(lead) {
+  if (!hatBewertungsDaten(lead)) return 'unbekannt';
+  const anzahl = lead.googleReviews ?? 0;
+  if (anzahl === 0) return 'keine';
+  if (anzahl < 15) return 'wenige';
+  return 'viele';
+}
+
+export function sterneKlasse(lead) {
+  if (!hatBewertungsDaten(lead) || !lead.googleRating) return 'unbekannt';
+  if (lead.googleRating < 3.5) return 'schlecht';
+  if (lead.googleRating < 4.2) return 'mittel';
+  return 'gut';
+}
+
 export function websiteAgeYears(audit) {
   const now = new Date();
   const thisYear = now.getFullYear();
@@ -274,5 +329,7 @@ export function enrichLead(lead) {
   lead.headline = s.headline;
   lead.inactiveYears = inactivityYears(lead);
   lead.websiteAgeYears = websiteAgeYears(audit);
+  lead.bewertungsKlasse = bewertungsKlasse(lead);
+  lead.sterneKlasse = sterneKlasse(lead);
   return lead;
 }

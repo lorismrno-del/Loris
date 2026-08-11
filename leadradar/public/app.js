@@ -97,8 +97,13 @@ const state = {
   page: 1,
   perPage: 60,
   selectedTrades: new Set(),
+  selectedCantons: new Set(),
   selectedId: null,
   view: 'liste',
+  queue: [],
+  queueIndex: 0,
+  queueTotal: 0,
+  laufenderJob: null,
 };
 
 // ------------------------------------------------------------------- Ansichten
@@ -113,7 +118,11 @@ function switchView(name) {
     view.classList.toggle('is-active', isActive);
     view.hidden = !isActive;
   }
-  $('#kpis').hidden = name === 'einstellungen';
+  // Im Anruf-Modus stören die Kennzahlen - dort zählt nur der nächste Anruf
+  $('#kpis').hidden = name === 'einstellungen' || name === 'anrufen' || name === 'karte';
+
+  if (name === 'anrufen') ladeWarteschlange();
+  if (name === 'karte') ladeKarte();
 }
 
 // ------------------------------------------------------------------ Kennzahlen
@@ -139,22 +148,474 @@ async function loadStats() {
   ].filter(Boolean));
 }
 
+// ------------------------------------------------------------- Anruf-Modus
+
+/**
+ * Der Anruf-Modus zeigt genau einen Lead: alles, was fürs Gespräch nötig ist,
+ * und darunter die Ergebnis-Knöpfe. Ein Tipp – gespeichert, nächster Lead.
+ */
+async function ladeWarteschlange() {
+  const p = new URLSearchParams({
+    trade: $('#qTrade').value,
+    canton: $('#qCanton').value,
+    minScore: $('#qMinScore').value,
+  });
+  const daten = await api('/api/warteschlange?' + p.toString());
+  state.queue = daten.leads;
+  state.queueTotal = daten.total;
+  state.queueIndex = 0;
+  zeigeTagesleiste(daten.heute);
+  zeigeAnrufKarte();
+}
+
+function zeigeTagesleiste(heute) {
+  const box = clear($('#tagesleiste'));
+  const zahl = (wert, label, farbe) =>
+    h('div', { class: 'tages-kpi' },
+      h('b', { style: farbe ? { color: farbe } : {}, text: String(wert) }),
+      h('span', { text: label }));
+
+  box.append(
+    zahl(heute.anrufe, 'Anrufe heute'),
+    zahl(heute.erreicht, 'erreicht', '#16a34a'),
+    zahl(heute.combox, 'Combox', '#ca8a04'),
+    zahl(heute.termine, 'Termine', '#2563eb'),
+    zahl(heute.quote + '%', 'Trefferquote'),
+    h('div', { class: 'tages-kpi tages-rest' },
+      h('b', { text: String(Math.max(0, state.queueTotal - state.queueIndex)) }),
+      h('span', { text: 'noch offen' })),
+  );
+}
+
+async function zeigeAnrufKarte() {
+  const box = clear($('#anrufKarte'));
+  const lead = state.queue[state.queueIndex];
+
+  if (!lead) {
+    $('#anrufLeer').hidden = false;
+    return;
+  }
+  $('#anrufLeer').hidden = true;
+
+  box.append(h('p', { class: 'muted', text: 'Lade …' }));
+
+  let daten;
+  try {
+    daten = await api('/api/leads/' + encodeURIComponent(lead.id));
+  } catch (err) {
+    clear(box).append(h('div', { class: 'notice is-error', text: err.message }));
+    return;
+  }
+
+  const l = daten.lead;
+  const telefon = l.customPhone || l.phone;
+  const tier = l.tier || {};
+  clear(box);
+
+  const karte = h('article', { class: 'anrufkarte' });
+
+  // ---- Kopf: wer, wo, wie heiss
+  karte.append(
+    h('div', { class: 'ak-kopf' },
+      h('div', { class: 'ak-position', text: `${state.queueIndex + 1} von ${state.queueTotal}` }),
+      h('h2', { text: l.name }),
+      h('p', { class: 'ak-ort', text: [l.address?.street, l.address?.zip, l.address?.city].filter(Boolean).join(', ') }),
+      h('div', { class: 'ak-badges' },
+        h('span', { class: 'pill', style: { background: (tier.color || '#64748b') + '1a', color: tier.color }, text: `${tier.emoji || ''} ${l.score}/100` }),
+        l.googleReviews != null
+          ? h('span', { class: 'pill pill-status', text: l.googleReviews === 0 ? '⭐ keine Bewertungen' : `⭐ ${l.googleRating} (${l.googleReviews})` })
+          : null,
+        l.anrufVersuche ? h('span', { class: 'pill pill-warn', text: `${l.anrufVersuche}. Versuch` }) : null,
+        l.followUpAt ? h('span', { class: 'pill pill-warn', text: 'Wiedervorlage fällig' }) : null)),
+  );
+
+  // ---- Das Problem, gross und deutlich
+  karte.append(h('div', { class: 'ak-problem' }, h('strong', { text: l.headline || '' })));
+
+  // ---- Anrufen
+  karte.append(
+    h('a', {
+      class: 'btn btn-primary ak-anrufen',
+      href: telHref(telefon),
+      onClick: () => { state.angerufen = true; },
+    }, '📞 ' + telefon),
+  );
+
+  // ---- Der Einstiegssatz - das Wichtigste beim Abheben
+  const einstieg = daten.script.steps[0];
+  karte.append(
+    h('div', { class: 'ak-skript' },
+      h('h4', { text: 'Wenn er abnimmt:' }),
+      h('p', { text: einstieg.text })),
+  );
+
+  // ---- Ergebnis festhalten
+  const ergebnisse = h('div', { class: 'ak-ergebnisse' });
+  for (const e of state.meta.anrufErgebnisse) {
+    ergebnisse.append(h('button', {
+      class: 'ergebnis-btn',
+      style: { borderColor: e.farbe + '55' },
+      dataset: { ergebnis: e.id },
+      onClick: () => ergebnisSpeichern(l, e),
+    },
+      h('span', { class: 'ergebnis-emoji', text: e.emoji }),
+      h('span', { text: e.label })));
+  }
+  karte.append(
+    h('div', { class: 'ak-abschnitt' },
+      h('h4', { text: 'Wie ist es gelaufen?' }),
+      ergebnisse),
+  );
+
+  // ---- Weitere Wege + Details
+  const werkzeuge = h('div', { class: 'ak-werkzeuge' });
+  if (telefon) {
+    werkzeuge.append(h('a', {
+      class: 'btn btn-secondary btn-sm', target: '_blank', rel: 'noopener',
+      href: waHref(telefon, daten.whatsapp),
+    }, '💬 WhatsApp'));
+  }
+  if (l.customEmail || l.email) {
+    werkzeuge.append(h('a', {
+      class: 'btn btn-secondary btn-sm',
+      href: `mailto:${l.customEmail || l.email}?subject=${encodeURIComponent(daten.email.subject)}&body=${encodeURIComponent(daten.email.body)}`,
+    }, '✉️ E-Mail'));
+  }
+  if (l.website) {
+    werkzeuge.append(h('a', { class: 'btn btn-secondary btn-sm', href: l.website, target: '_blank', rel: 'noopener nofollow' }, '🌐 Seite'));
+  }
+  werkzeuge.append(h('button', {
+    class: 'btn btn-secondary btn-sm',
+    onClick: () => openDetail(l.id),
+  }, 'ℹ️ Alle Details'));
+  werkzeuge.append(h('button', {
+    class: 'btn btn-ghost btn-sm',
+    onClick: () => naechsterLead(),
+  }, 'Überspringen →'));
+  karte.append(werkzeuge);
+
+  // ---- Ausklappbar: voller Leitfaden und Fakten
+  const details = h('details', { class: 'ak-mehr' },
+    h('summary', {}, 'Ganzer Leitfaden & Einwände'));
+  for (const s of daten.script.steps.slice(1)) {
+    details.append(h('div', { class: 'script-step' },
+      h('h4', { text: s.title }),
+      h('p', { text: s.text })));
+  }
+  if (daten.script.facts?.length) {
+    details.append(h('h4', { style: { marginTop: '12px' }, text: 'Fakten' }),
+      h('ul', { class: 'facts' }, ...daten.script.facts.map((f) => h('li', { text: f }))));
+  }
+  karte.append(details);
+
+  box.append(karte);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function ergebnisSpeichern(lead, ergebnis) {
+  let datum;
+  if (ergebnis.brauchtDatum) {
+    const eingabe = prompt('Wann zurückrufen? (TT.MM.JJJJ)', new Date(Date.now() + 86400000).toLocaleDateString('de-CH'));
+    if (eingabe === null) return;
+    const teile = eingabe.split('.');
+    if (teile.length === 3) datum = new Date(`${teile[2]}-${teile[1]}-${teile[0]}`).toISOString();
+  }
+
+  const notiz = ['erreicht', 'termin', 'kein_interesse'].includes(ergebnis.id)
+    ? prompt(`Notiz zu "${lead.name}" (leer lassen geht auch):`, '') || ''
+    : '';
+
+  try {
+    const antwort = await api(`/api/leads/${encodeURIComponent(lead.id)}/anruf`, {
+      method: 'POST',
+      body: { ergebnis: ergebnis.id, notiz, datum },
+    });
+    toast(`${ergebnis.emoji} ${ergebnis.label} gespeichert`, ergebnis.erfolg ? 'ok' : '');
+    if (antwort.hinweis) setTimeout(() => toast(antwort.hinweis), 2900);
+  } catch (err) {
+    toast(err.message, 'error');
+    return;
+  }
+
+  naechsterLead();
+  loadStats();
+}
+
+function naechsterLead() {
+  state.queueIndex++;
+  api('/api/warteschlange?trade=' + $('#qTrade').value + '&canton=' + $('#qCanton').value + '&minScore=' + $('#qMinScore').value)
+    .then((d) => zeigeTagesleiste(d.heute))
+    .catch(() => {});
+  zeigeAnrufKarte();
+}
+
+// ------------------------------------------------------------------ Karte
+
+const KARTE = {
+  zoom: 8,
+  mitteLat: 46.8,
+  mitteLng: 8.23,
+  punkte: [],
+  ziehen: null,
+};
+
+const KACHEL = 256;
+
+const lngZuX = (lng, z) => ((lng + 180) / 360) * Math.pow(2, z) * KACHEL;
+const latZuY = (lat, z) => {
+  const s = Math.sin((lat * Math.PI) / 180);
+  return (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * Math.pow(2, z) * KACHEL;
+};
+
+async function ladeKarte() {
+  const daten = await api('/api/karte?' + currentFilters().toString());
+  KARTE.punkte = daten.punkte;
+  $('#karteInfo').textContent =
+    `${daten.total} Leads auf der Karte` + (daten.total > daten.punkte.length ? ` (${daten.punkte.length} angezeigt)` : '');
+  if (daten.punkte.length) passeAusschnittAn();
+  zeichneKarte();
+}
+
+/** Zoom und Mitte so wählen, dass alle Punkte sichtbar sind. */
+function passeAusschnittAn() {
+  const lats = KARTE.punkte.map((p) => p.lat);
+  const lngs = KARTE.punkte.map((p) => p.lng);
+  KARTE.mitteLat = (Math.min(...lats) + Math.max(...lats)) / 2;
+  KARTE.mitteLng = (Math.min(...lngs) + Math.max(...lngs)) / 2;
+
+  const el = $('#karte');
+  const breite = el.clientWidth || 800;
+  const hoehe = el.clientHeight || 500;
+
+  for (let z = 14; z >= 6; z--) {
+    const dx = Math.abs(lngZuX(Math.max(...lngs), z) - lngZuX(Math.min(...lngs), z));
+    const dy = Math.abs(latZuY(Math.min(...lats), z) - latZuY(Math.max(...lats), z));
+    if (dx < breite * 0.85 && dy < hoehe * 0.85) { KARTE.zoom = z; return; }
+  }
+  KARTE.zoom = 7;
+}
+
+function zeichneKarte() {
+  const el = $('#karte');
+  const breite = el.clientWidth;
+  const hoehe = el.clientHeight;
+  const z = KARTE.zoom;
+
+  const mitteX = lngZuX(KARTE.mitteLng, z);
+  const mitteY = latZuY(KARTE.mitteLat, z);
+  const linksX = mitteX - breite / 2;
+  const obenY = mitteY - hoehe / 2;
+
+  // ---- Kacheln
+  const tiles = clear($('#karteTiles'));
+  const max = Math.pow(2, z);
+  const vonX = Math.floor(linksX / KACHEL);
+  const bisX = Math.floor((linksX + breite) / KACHEL);
+  const vonY = Math.max(0, Math.floor(obenY / KACHEL));
+  const bisY = Math.min(max - 1, Math.floor((obenY + hoehe) / KACHEL));
+
+  for (let x = vonX; x <= bisX; x++) {
+    for (let y = vonY; y <= bisY; y++) {
+      const tx = ((x % max) + max) % max;
+      const img = h('img', {
+        class: 'kachel',
+        src: `https://tile.openstreetmap.org/${z}/${tx}/${y}.png`,
+        loading: 'lazy',
+        alt: '',
+        style: { left: x * KACHEL - linksX + 'px', top: y * KACHEL - obenY + 'px' },
+      });
+      // Ohne Internet bleibt der graue Hintergrund - die Punkte stimmen trotzdem
+      img.addEventListener('error', () => { img.style.visibility = 'hidden'; });
+      tiles.append(img);
+    }
+  }
+
+  // ---- Punkte
+  const marker = clear($('#karteMarker'));
+  for (const p of KARTE.punkte) {
+    const x = lngZuX(p.lng, z) - linksX;
+    const y = latZuY(p.lat, z) - obenY;
+    if (x < -20 || y < -20 || x > breite + 20 || y > hoehe + 20) continue;
+
+    marker.append(h('button', {
+      class: 'kartenpunkt',
+      style: {
+        left: x + 'px', top: y + 'px',
+        background: p.farbe,
+        width: p.score >= 75 ? '15px' : '11px',
+        height: p.score >= 75 ? '15px' : '11px',
+      },
+      title: `${p.name} · ${p.ort} · ${p.problem}`,
+      onClick: (e) => { e.stopPropagation(); openDetail(p.id); },
+    }));
+  }
+}
+
+function kartenSteuerung() {
+  const el = $('#karte');
+
+  el.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('.kartenpunkt')) return;
+    KARTE.ziehen = { x: e.clientX, y: e.clientY, lat: KARTE.mitteLat, lng: KARTE.mitteLng };
+    el.setPointerCapture(e.pointerId);
+    el.style.cursor = 'grabbing';
+  });
+
+  el.addEventListener('pointermove', (e) => {
+    if (!KARTE.ziehen) return;
+    const z = KARTE.zoom;
+    const dx = e.clientX - KARTE.ziehen.x;
+    const dy = e.clientY - KARTE.ziehen.y;
+    const startX = lngZuX(KARTE.ziehen.lng, z);
+    const startY = latZuY(KARTE.ziehen.lat, z);
+
+    KARTE.mitteLng = ((startX - dx) / (Math.pow(2, z) * KACHEL)) * 360 - 180;
+    const yAnteil = 0.5 - (startY - dy) / (Math.pow(2, z) * KACHEL);
+    KARTE.mitteLat = (Math.atan(Math.sinh(yAnteil * 2 * Math.PI)) * 180) / Math.PI;
+    zeichneKarte();
+  });
+
+  const beenden = () => { KARTE.ziehen = null; el.style.cursor = 'grab'; };
+  el.addEventListener('pointerup', beenden);
+  el.addEventListener('pointercancel', beenden);
+
+  el.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    zoomen(e.deltaY < 0 ? 1 : -1);
+  }, { passive: false });
+
+  $('#zoomIn').addEventListener('click', () => zoomen(1));
+  $('#zoomOut').addEventListener('click', () => zoomen(-1));
+  $('#zoomFit').addEventListener('click', () => { passeAusschnittAn(); zeichneKarte(); });
+
+  window.addEventListener('resize', () => { if (state.view === 'karte') zeichneKarte(); });
+}
+
+function zoomen(richtung) {
+  KARTE.zoom = Math.max(6, Math.min(17, KARTE.zoom + richtung));
+  zeichneKarte();
+}
+
 // ---------------------------------------------------------------------- Suche
 
 function renderTradeChips() {
   const box = clear($('#tradeChips'));
-  for (const trade of state.meta.trades) {
-    const chip = h('button', {
-      class: 'chip' + (state.selectedTrades.has(trade.id) ? ' is-on' : ''),
+
+  for (const gruppe of state.meta.gruppen) {
+    const branchen = state.meta.trades.filter((t) => t.gruppe === gruppe.id);
+    if (!branchen.length) continue;
+
+    const alleAn = branchen.every((t) => state.selectedTrades.has(t.id));
+    box.append(
+      h('div', { class: 'chip-gruppe' },
+        h('span', { class: 'chip-gruppe-titel', text: gruppe.label }),
+        h('button', {
+          class: 'linkbtn', type: 'button',
+          text: alleAn ? 'abwählen' : 'alle',
+          onClick() {
+            for (const t of branchen) {
+              if (alleAn) state.selectedTrades.delete(t.id);
+              else state.selectedTrades.add(t.id);
+            }
+            renderTradeChips();
+          },
+        })),
+    );
+
+    const reihe = h('div', { class: 'chips' });
+    for (const trade of branchen) {
+      reihe.append(h('button', {
+        class: 'chip' + (state.selectedTrades.has(trade.id) ? ' is-on' : ''),
+        type: 'button',
+        text: `${trade.emoji} ${trade.label}`,
+        onClick() {
+          if (state.selectedTrades.has(trade.id)) state.selectedTrades.delete(trade.id);
+          else state.selectedTrades.add(trade.id);
+          renderTradeChips();
+        },
+      }));
+    }
+    box.append(reihe);
+  }
+
+  const anzahl = state.selectedTrades.size;
+  box.append(h('p', { class: 'muted', style: { marginTop: '10px' },
+    text: anzahl === 0 ? 'Noch keine Branche gewählt.' : `${anzahl} Branchen gewählt.` }));
+}
+
+const DEUTSCHSCHWEIZ = ['ZH', 'BE', 'LU', 'UR', 'SZ', 'OW', 'NW', 'GL', 'ZG', 'SO',
+  'BS', 'BL', 'SH', 'AR', 'AI', 'SG', 'GR', 'AG', 'TG'];
+
+function renderCantonChips() {
+  const box = clear($('#cantonChips'));
+  for (const k of state.meta.kantone) {
+    box.append(h('button', {
+      class: 'chip chip-klein' + (state.selectedCantons.has(k.code) ? ' is-on' : ''),
       type: 'button',
-      text: `${trade.emoji} ${trade.label}`,
+      title: k.name,
+      text: k.code,
       onClick() {
-        if (state.selectedTrades.has(trade.id)) state.selectedTrades.delete(trade.id);
-        else state.selectedTrades.add(trade.id);
-        renderTradeChips();
+        if (state.selectedCantons.has(k.code)) state.selectedCantons.delete(k.code);
+        else state.selectedCantons.add(k.code);
+        renderCantonChips();
+        scanVorschau();
       },
+    }));
+  }
+}
+
+/** Zeigt vor dem Start, wie gross der Scan wird - besonders wichtig bei Google. */
+async function scanVorschau() {
+  const box = $('#scanVorschau');
+  const trades = [...state.selectedTrades];
+  if (trades.length === 0) {
+    box.hidden = true;
+    return;
+  }
+  try {
+    const v = await api('/api/scan-schweiz/vorschau', {
+      method: 'POST',
+      body: { kantone: [...state.selectedCantons], trades, source: $('#sourceSelect').value },
     });
-    box.append(chip);
+    box.className = 'notice';
+    box.textContent =
+      `${v.orte} Orte in ${v.kantone} Kantonen · ${trades.length} Branchen · ` +
+      `ca. ${v.minutenGeschaetzt} Minuten. ${v.kostenHinweis}`;
+    box.hidden = false;
+  } catch {
+    box.hidden = true;
+  }
+}
+
+async function startSchweizScan() {
+  const trades = [...state.selectedTrades];
+  if (trades.length === 0) return toast('Bitte oben mindestens eine Branche wählen', 'error');
+
+  const kantone = [...state.selectedCantons];
+  const gebiet = kantone.length ? kantone.join(', ') : 'die ganze Schweiz';
+  if (!confirm(`Schweiz-Scan für ${gebiet} mit ${trades.length} Branchen starten?\n\nDas läuft eine Weile. Du kannst jederzeit abbrechen.`)) return;
+
+  const btn = $('#scanBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Scan läuft …';
+  $('#searchResult').hidden = true;
+  $('#searchProgress').hidden = false;
+  $('#stopBtn').hidden = false;
+
+  try {
+    const { jobId } = await api('/api/scan-schweiz', {
+      method: 'POST',
+      body: { source: $('#sourceSelect').value, trades, kantone, doAudit: $('#auditCheck').checked },
+    });
+    state.laufenderJob = jobId;
+    await pollJob(jobId);
+  } catch (err) {
+    showSearchResult(err.message, 'is-error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🇨🇭 Schweiz-Scan starten';
+    $('#stopBtn').hidden = true;
+    state.laufenderJob = null;
   }
 }
 
@@ -220,14 +681,19 @@ function pollJob(jobId) {
         if (r.found === 0) {
           showSearchResult(r.hint || 'Keine Treffer.', 'is-error');
         } else {
+          const wo = r.orteTotal
+            ? `${r.orte} von ${r.orteTotal} Orten abgesucht`
+            : r.place ? `${r.place}, ${r.radiusKm} km` : '';
           showSearchResult(
-            `✓ ${r.found} Betriebe gefunden – ${r.added} neu, ${r.updated} aktualisiert` +
-            (r.place ? ` (${r.place}, ${r.radiusKm} km)` : '') +
-            '. Wechsle zur Anrufliste, um loszulegen.',
-            'is-ok',
+            (job.abgebrochen ? '⏹ Abgebrochen – ' : '✓ ') +
+            `${r.found} Treffer, davon ${r.added} neu und ${r.updated} aktualisiert` +
+            (wo ? ` (${wo})` : '') +
+            (r.fehler?.length ? `. ${r.fehler.length} Orte übersprungen.` : '') +
+            '. Alles gespeichert.',
+            job.abgebrochen ? '' : 'is-ok',
           );
           await Promise.all([loadLeads(), loadStats()]);
-          if (r.added > 0) setTimeout(() => switchView('liste'), 900);
+          if (r.added > 0 && !r.orteTotal) setTimeout(() => switchView('liste'), 900);
         }
       }
       resolve();
@@ -253,6 +719,9 @@ function currentFilters() {
   p.set('websiteStatus', $('#fWebsite').value);
   p.set('trade', $('#fTrade').value);
   p.set('city', $('#fCity').value);
+  p.set('canton', $('#fCanton').value);
+  p.set('reviews', $('#fReviews').value);
+  p.set('rating', $('#fRating').value);
   p.set('sort', $('#fSort').value);
   if ($('#fPhone').checked) p.set('onlyPhone', '1');
   if ($('#fHideDone').checked) p.set('hideDone', '1');
@@ -269,17 +738,21 @@ async function loadLeads(append = false) {
   state.total = data.total;
   state.leads = append ? [...state.leads, ...data.leads] : data.leads;
 
-  // Ortsfilter befüllen (nur einmal pro Datenstand)
-  const citySel = $('#fCity');
-  if (citySel.options.length - 1 !== data.cities.length) {
-    const chosen = citySel.value;
-    clear(citySel).append(h('option', { value: 'alle' }, 'Alle Orte'));
-    for (const c of data.cities) citySel.append(h('option', { value: c }, c));
-    citySel.value = data.cities.includes(chosen) ? chosen : 'alle';
-  }
+  // Orts- und Kantonsfilter befüllen (nur wenn sich der Datenstand geändert hat)
+  fuelleAuswahl($('#fCity'), data.cities, 'Alle Orte');
+  fuelleAuswahl($('#fCanton'), data.cantons, 'Alle Kantone');
 
   renderLeads();
   $('#exportBtn').href = '/api/export.csv?' + currentFilters().toString();
+}
+
+/** Füllt ein Auswahlfeld, ohne die aktuelle Auswahl zu verlieren. */
+function fuelleAuswahl(select, werte, alleLabel) {
+  if (select.options.length - 1 === werte.length) return;
+  const gewaehlt = select.value;
+  clear(select).append(h('option', { value: 'alle' }, alleLabel));
+  for (const w of werte) select.append(h('option', { value: w }, w));
+  select.value = werte.includes(gewaehlt) ? gewaehlt : 'alle';
 }
 
 function renderLeads() {
@@ -794,8 +1267,15 @@ async function init() {
     for (const t of state.meta.trades) sel.append(h('option', { value: t.id }, `${t.emoji} ${t.label}`));
   };
   tradeOptions($('#fTrade'), 'Alle Branchen');
+  tradeOptions($('#qTrade'), 'Alle Branchen');
   clear($('#mTrade'));
   for (const t of state.meta.trades) $('#mTrade').append(h('option', { value: t.id }, t.label));
+
+  // Kantone für Schweiz-Scan und Anruf-Filter
+  renderCantonChips();
+  const qCanton = clear($('#qCanton'));
+  qCanton.append(h('option', { value: 'alle' }, 'Ganze Schweiz'));
+  for (const k of state.meta.kantone) qCanton.append(h('option', { value: k.code }, k.name));
 
   clear($('#fStatus')).append(h('option', { value: 'alle' }, 'Alle Status'));
   for (const s of state.meta.statuses) $('#fStatus').append(h('option', { value: s.id }, s.label));
@@ -817,7 +1297,9 @@ async function init() {
   for (const c of state.meta.places.cantons) dl.append(h('option', { value: c.name }));
 
   renderSourceStatus();
+  kartenSteuerung();
   await Promise.all([loadLeads(), loadStats()]);
+  scanVorschau();
 }
 
 // ------------------------------------------------------------------ Ereignisse
@@ -859,9 +1341,63 @@ $('#manualAddBtn').addEventListener('click', async () => {
 });
 
 let filterTimer;
-for (const id of ['#fStatus', '#fTier', '#fWebsite', '#fTrade', '#fCity', '#fSort', '#fPhone', '#fHideDone']) {
-  $(id).addEventListener('change', () => loadLeads());
+for (const id of ['#fStatus', '#fTier', '#fWebsite', '#fTrade', '#fCity', '#fCanton',
+  '#fReviews', '#fRating', '#fSort', '#fPhone', '#fHideDone']) {
+  $(id).addEventListener('change', () => {
+    loadLeads();
+    if (state.view === 'karte') ladeKarte();
+  });
 }
+
+// ---- Anruf-Modus
+for (const id of ['#qTrade', '#qCanton', '#qMinScore']) {
+  $(id).addEventListener('change', () => ladeWarteschlange());
+}
+$('#qReload').addEventListener('click', () => ladeWarteschlange());
+
+// ---- Schweiz-Scan
+$('#scanBtn').addEventListener('click', startSchweizScan);
+$('#cantonNone').addEventListener('click', () => {
+  state.selectedCantons.clear();
+  renderCantonChips();
+  scanVorschau();
+});
+$('#cantonDeutsch').addEventListener('click', () => {
+  state.selectedCantons.clear();
+  DEUTSCHSCHWEIZ.forEach((k) => state.selectedCantons.add(k));
+  renderCantonChips();
+  scanVorschau();
+});
+$('#stopBtn').addEventListener('click', async () => {
+  if (!state.laufenderJob) return;
+  await fetch('/api/jobs/' + state.laufenderJob, { method: 'DELETE' });
+  $('#stopBtn').textContent = 'Wird abgebrochen …';
+  $('#stopBtn').disabled = true;
+  setTimeout(() => { $('#stopBtn').textContent = 'Abbrechen'; $('#stopBtn').disabled = false; }, 3000);
+});
+
+// ---- Tastenkürzel für schnelles Durchtelefonieren
+document.addEventListener('keydown', (e) => {
+  if (state.view !== 'anrufen') return;
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+  // Ziffern 1-9 lösen die Ergebnis-Knöpfe in ihrer Reihenfolge aus
+  const ziffer = Number(e.key);
+  if (ziffer >= 1 && ziffer <= 9) {
+    const knoepfe = document.querySelectorAll('.ergebnis-btn');
+    if (knoepfe[ziffer - 1]) {
+      e.preventDefault();
+      knoepfe[ziffer - 1].click();
+    }
+    return;
+  }
+  if (e.key === 'ArrowRight' || e.key === 's') { e.preventDefault(); naechsterLead(); }
+  if (e.key === 'a') {
+    const anrufen = document.querySelector('.ak-anrufen');
+    if (anrufen) { e.preventDefault(); anrufen.click(); }
+  }
+});
 $('#fSearch').addEventListener('input', () => {
   clearTimeout(filterTimer);
   filterTimer = setTimeout(() => loadLeads(), 280);

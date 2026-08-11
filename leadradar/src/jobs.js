@@ -20,6 +20,8 @@ export function createJob(label) {
     result: null,
     error: null,
     log: [],
+    abbruch: false,
+    zwischenstand: null,
   };
   jobs.set(id, job);
 
@@ -46,6 +48,24 @@ export function finishJob(job, result) {
   job.state = 'done';
   job.step = 'Fertig';
   job.result = result;
+  job.finishedAt = Date.now();
+}
+
+/** Bittet einen laufenden Job, beim nächsten Schritt aufzuhören. */
+export function stopJob(id) {
+  const job = jobs.get(id);
+  if (!job || job.state !== 'running') return false;
+  job.abbruch = true;
+  job.step = 'Wird abgebrochen …';
+  return true;
+}
+
+/** Job wurde vom Nutzer gestoppt - bereits gefundene Leads bleiben erhalten. */
+export function cancelJob(job, result) {
+  job.state = 'done';
+  job.step = 'Abgebrochen';
+  job.abgebrochen = true;
+  job.result = { ...result, abgebrochen: true };
   job.finishedAt = Date.now();
 }
 

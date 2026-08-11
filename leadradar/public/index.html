@@ -25,9 +25,11 @@
   </div>
 
   <nav class="tabs" id="tabs">
-    <button class="tab is-active" data-view="liste">Anrufliste</button>
-    <button class="tab" data-view="suche">Leads finden</button>
-    <button class="tab" data-view="einstellungen">Einstellungen</button>
+    <button class="tab" data-view="anrufen">📞 Anrufen</button>
+    <button class="tab is-active" data-view="liste">Liste</button>
+    <button class="tab" data-view="karte">Karte</button>
+    <button class="tab" data-view="suche">Finden</button>
+    <button class="tab" data-view="einstellungen">⚙️</button>
   </nav>
 
   <div class="topbar-right">
@@ -37,6 +39,58 @@
 
 <!-- ============================================ Kennzahlen ============ -->
 <section class="kpis" id="kpis"></section>
+
+<!-- ============================================ Ansicht: Anrufen ====== -->
+<main class="view" id="view-anrufen" hidden>
+  <div class="tagesleiste" id="tagesleiste"></div>
+
+  <div class="anruf-filter">
+    <select id="qTrade"></select>
+    <select id="qCanton"><option value="alle">Ganze Schweiz</option></select>
+    <select id="qMinScore">
+      <option value="0">Alle Leads</option>
+      <option value="55">Ab 55 (nur heisse)</option>
+      <option value="75" selected>Ab 75 (nur sehr heisse)</option>
+    </select>
+    <button class="btn btn-secondary btn-sm" id="qReload">↻</button>
+  </div>
+
+  <div id="anrufKarte"></div>
+
+  <div class="empty" id="anrufLeer" hidden>
+    <h3>🎉 Für heute durch</h3>
+    <p class="muted">
+      Keine offenen Leads mehr in dieser Auswahl. Erweitere den Filter,
+      such neue Leads – oder mach Feierabend.
+    </p>
+  </div>
+</main>
+
+<!-- ============================================ Ansicht: Karte ======== -->
+<main class="view" id="view-karte" hidden>
+  <div class="karte-kopf">
+    <span class="muted" id="karteInfo">–</span>
+    <div class="karte-legende">
+      <span><i style="background:#dc2626"></i> Sehr heiss</span>
+      <span><i style="background:#ea580c"></i> Heiss</span>
+      <span><i style="background:#ca8a04"></i> Interessant</span>
+      <span><i style="background:#64748b"></i> Schwach</span>
+      <span><i style="background:#16a34a"></i> Kein Bedarf</span>
+    </div>
+  </div>
+  <div class="karte-wrap">
+    <div class="karte" id="karte">
+      <div class="karte-tiles" id="karteTiles"></div>
+      <div class="karte-marker" id="karteMarker"></div>
+    </div>
+    <div class="karte-zoom">
+      <button class="icon-btn" id="zoomIn">+</button>
+      <button class="icon-btn" id="zoomOut">−</button>
+      <button class="icon-btn" id="zoomFit" title="Alle zeigen">⤢</button>
+    </div>
+    <div class="karte-attribution">© OpenStreetMap-Mitwirkende</div>
+  </div>
+</main>
 
 <!-- ============================================ Ansicht: Suche ======== -->
 <main class="view" id="view-suche" hidden>
@@ -98,9 +152,34 @@
     <div class="progress" id="searchProgress" hidden>
       <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
       <p class="progress-step" id="progressStep">Start …</p>
+      <button class="btn btn-danger btn-sm" id="stopBtn" hidden>Abbrechen</button>
     </div>
 
     <div class="notice" id="searchResult" hidden></div>
+  </div>
+
+  <div class="panel panel-schweiz">
+    <h2>🇨🇭 Schweiz-Scan</h2>
+    <p class="muted">
+      Sucht die gewählten Branchen im ganzen Land ab – Ort für Ort, durch alle
+      Kantone. Läuft je nach Umfang einige Minuten bis über eine Stunde.
+      Du kannst jederzeit abbrechen, alles bis dahin Gefundene ist gespeichert.
+    </p>
+
+    <div class="field">
+      <label>Kantone <span class="muted">(nichts gewählt = ganze Schweiz)</span></label>
+      <div class="chips chips-klein" id="cantonChips"></div>
+      <div class="chip-actions">
+        <button class="linkbtn" id="cantonNone">Ganze Schweiz</button>
+        <button class="linkbtn" id="cantonDeutsch">Nur Deutschschweiz</button>
+      </div>
+    </div>
+
+    <div class="notice" id="scanVorschau" hidden></div>
+
+    <div class="actions">
+      <button class="btn btn-gold btn-lg" id="scanBtn">🇨🇭 Schweiz-Scan starten</button>
+    </div>
   </div>
 
   <div class="panel panel-soft">
@@ -142,6 +221,19 @@
     </select>
     <select id="fTrade"></select>
     <select id="fCity"><option value="alle">Alle Orte</option></select>
+    <select id="fCanton"><option value="alle">Alle Kantone</option></select>
+    <select id="fReviews">
+      <option value="alle">Alle Bewertungen</option>
+      <option value="keine">Keine Bewertungen</option>
+      <option value="wenige">Wenige (unter 15)</option>
+      <option value="viele">Viele (ab 15)</option>
+    </select>
+    <select id="fRating">
+      <option value="alle">Alle Sterne</option>
+      <option value="schlecht">Schlecht (unter 3.5★)</option>
+      <option value="mittel">Mittel (3.5–4.2★)</option>
+      <option value="gut">Gut (ab 4.2★)</option>
+    </select>
     <select id="fSort">
       <option value="score">Sortieren: Potenzial</option>
       <option value="reviews">Sortieren: Bewertungen</option>

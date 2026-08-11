@@ -187,11 +187,30 @@ Der Deckel bei 48 ist Absicht: **Ein Betrieb ohne Webseite steht immer über
 einem mit schlechter Webseite.** Das Gespräch ist eindeutiger zu führen – bei
 einer bestehenden Seite hat sie oft der Neffe des Chefs gebaut.
 
+Dazu kommt die **Google-Präsenz** als eigenes Verkaufsargument:
+
+| Situation | Punkte |
+|---|---|
+| Keine einzige Bewertung | +12 |
+| Unter 5 Bewertungen | +9 |
+| Unter 15 Bewertungen | +5 |
+| Bewertung unter 3.5★ | +8 |
+| Bewertung 3.5–4.0★ | +4 |
+
+Das zählt nur, wenn die Datenquelle überhaupt Bewertungen kennt. Bei
+OpenStreetMap hiesse „0 Bewertungen" bloss „wir wissen es nicht" – dafür
+bekommt niemand Punkte.
+
 **Qualität (0–30) – lohnt sich der Aufwand?**
 
 Viele gute Google-Bewertungen (+12), Telefonnummer vorhanden (+8),
 E-Mail vorhanden (+5), lange keine neue Bewertung (+5).
 Laut Google geschlossener Betrieb: −25.
+
+Dass viele Bewertungen hier Punkte *geben* und oben Punkte *nehmen*, ist kein
+Widerspruch: Ein Betrieb mit 60 guten Bewertungen läuft gut und kann zahlen –
+einer mit dreien hat online mehr Nachholbedarf. Beides ist wahr, beides fliesst
+ein.
 
 **Einstufungen:** 🔥 ab 75 · 🌡️ ab 55 · 👀 ab 35 · 💤 ab 18 · ✅ darunter
 
@@ -199,22 +218,80 @@ Laut Google geschlossener Betrieb: −25.
 
 ## Bedienung
 
-**Anrufliste** – deine tägliche Arbeitsfläche. Klick auf einen Lead öffnet
-rechts das Detail: grosser Anruf-Button, WhatsApp, E-Mail mit fertiger Vorlage,
-Gesprächsleitfaden, Notizen und Statuswechsel.
+### 📞 Anrufen – der Arbeitsmodus
 
-Die Buttons funktionieren auch auf dem Handy – `tel:` startet den Anruf direkt,
-WhatsApp öffnet den Chat mit vorgeschriebenem Text.
+Zeigt genau **einen** Lead: Name, Ort, das Problem, die Nummer als grosser
+Knopf und darunter der Einstiegssatz. Nach dem Gespräch tippst du auf ein
+Ergebnis – gespeichert, nächster Lead. Kein Zurückblättern, kein Suchen.
+
+Die Ergebnisse:
+
+| | | Was passiert |
+|---|---|---|
+| 💬 | Gespräch geführt | Status → Kontaktiert, Notiz möglich |
+| 🤝 | Termin vereinbart | Status → Termin |
+| 📼 | Combox | Wiedervorlage **morgen**, bleibt in der Liste |
+| 📵 | Niemand ran | Wiedervorlage morgen |
+| ⏳ | Besetzt | Wiedervorlage **heute** |
+| 🔁 | Rückruf abgemacht | Datum eingeben, Wiedervorlage gesetzt |
+| ✉️ | Will Unterlagen | Wiedervorlage in 4 Tagen |
+| 🕓 | Später nochmal | Wiedervorlage in 3 Monaten |
+| 👎 | Kein Interesse | Status → Abgelehnt |
+| 🚫 | Nicht mehr anrufen | Dauerhaft gesperrt |
+| ❌ | Nummer stimmt nicht | Bleibt drin, Nummer prüfen |
+| 🏚️ | Gibt es nicht mehr | Status → Abgelehnt |
+
+War jemand **dreimal** nicht erreichbar, weist die App darauf hin und schlägt
+WhatsApp oder E-Mail vor – dort liegt die Vorlage schon bereit.
+
+**Die Reihenfolge** macht die App selbst: zuerst fällige Wiedervorlagen
+(Zugesagtes einhalten geht vor), danach nach Potenzial. Wer heute schon dran
+war, keine Nummer hat, abgelehnt hat oder Kunde ist, taucht gar nicht erst auf.
+
+**Tastenkürzel** (am Rechner): `1`–`9` für die Ergebnisknöpfe, `a` zum Anrufen,
+`→` oder `s` zum Überspringen.
+
+Oben läuft der Tageszähler mit: Anrufe, erreicht, Combox, Termine, Trefferquote.
+
+### Liste, Karte, Finden
+
+**Liste** – alle Leads mit allen Filtern. Klick öffnet rechts das Detail mit
+vollem Leitfaden, Vorlagen, Notizen und der technischen Analyse.
+
+**Karte** – alle Leads geografisch, eingefärbt nach Potenzial. Klick auf einen
+Punkt öffnet den Lead. Praktisch, um eine Tour zu planen oder ein Gebiet
+abzugrasen.
+
+**Filter** – neben Status und Branche auch: Kanton, Webseiten-Problem,
+**Anzahl Bewertungen** (keine / wenige / viele) und **Sterne**
+(schlecht / mittel / gut). Damit findest du gezielt Betriebe, die online
+schwach dastehen.
 
 **Status-Pipeline:** Neu → Anrufen → Kontaktiert → Wiedervorlage → Termin →
 Offerte raus → Kunde ✅ (oder Kein Interesse / Nicht kontaktieren)
 
-**Nach einem „Nein"** den Status auf *Nicht kontaktieren* setzen. Der Lead wird
-dann ausgegraut und aus den Listen gefiltert – so rufst du nie versehentlich
-zweimal an.
-
 **Einstellungen** – dein Profil, deine Verkaufsargumente und die Weitergabe an
 andere Tools. Alles, was du hier änderst, landet sofort in den Skripten.
+
+---
+
+## 🇨🇭 Schweiz-Scan
+
+Sucht die gewählten Branchen im **ganzen Land** ab – Ort für Ort durch alle
+26 Kantone (80 Orte im eingebauten Verzeichnis). Doppelte Treffer zwischen
+Nachbarorten filtert die App selbst heraus.
+
+Vor dem Start siehst du eine Abschätzung: wie viele Orte, wie viele Anfragen,
+wie lange es dauert – bei Google auch der Hinweis aufs Guthaben. Beim
+Flächenscan lädt Google bewusst nur die erste Ergebnisseite pro Ort, sonst
+explodieren die Kosten.
+
+Du kannst auf einzelne Kantone einschränken oder mit einem Klick die ganze
+Deutschschweiz wählen. **Abbrechen geht jederzeit** – nach jedem Ort wird
+gespeichert, es geht also höchstens ein Ort verloren.
+
+> Bei OpenStreetMap wartet die App zwischen den Orten gut eine Sekunde. Das ist
+> Absicht: Overpass ist ein Gemeinschaftsdienst, den man nicht überrennt.
 
 ---
 
@@ -299,10 +376,21 @@ Das ist eine Orientierungshilfe, keine Rechtsberatung.
 npm test
 ```
 
-19 Tests decken die Webseiten-Analyse (veraltete Seite, tote Seite, geparkte
-Domain, Facebook-Weiterleitung, versteckte E-Mails), die Bewertungslogik und
-den CSV-Export ab. Die Testseiten laufen auf einem lokalen Server – es wird
-nichts von aussen abgerufen.
+37 Tests decken ab:
+
+- **Webseiten-Analyse** – veraltete Seite, tote Seite, geparkte Domain,
+  Weiterleitung auf Facebook, versteckte E-Mail-Schreibweisen, Zeichensätze
+- **Bewertung** – Rangfolge der Problemfälle, Bewertungs-Signale, und dass
+  OpenStreetMap-Leads keine Abzüge für unbekannte Bewertungen bekommen
+- **Anrufergebnisse** – Combox setzt die Wiedervorlage auf morgen, „nicht mehr
+  anrufen" sperrt dauerhaft, der Kanalwechsel-Hinweis nach drei Fehlversuchen
+- **Warteschlange** – heute Versuchte fallen raus, fällige Wiedervorlagen
+  kommen vor besseren Leads
+- **Kartenmathematik** – Kachelkoordinaten und die Rückrechnung beim Verschieben
+- **CSV-Export** – Kopfzeile, Umlaute, Schutz vor Formeln in Excel
+
+Die Testseiten laufen auf einem lokalen Server – es wird nichts von aussen
+abgerufen.
 
 ---
 
