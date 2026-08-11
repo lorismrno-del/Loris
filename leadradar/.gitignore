@@ -1,0 +1,11 @@
+# Deine echten Zugangsdaten - gehören nie ins Repository
+.env
+
+# Deine Leads und Einstellungen bleiben lokal auf deinem Rechner
+data/*.json
+data/*.tmp
+data/*.kaputt-*
+
+node_modules/
+*.log
+.DS_Store

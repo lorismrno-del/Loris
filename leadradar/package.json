@@ -1,0 +1,17 @@
+{
+  "name": "lorino-leadradar",
+  "version": "1.0.0",
+  "description": "Lead-Finder für Lorino Co. - findet Handwerks- und Baubetriebe ohne (gute) Website inkl. Telefon & E-Mail",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {},
+  "private": true
+}

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="de-CH">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2563eb">
+<title>Leadradar · Lorino Co.</title>
+<link rel="stylesheet" href="/styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📡</text></svg>">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">📡</span>
+    <div class="brand-text">
+      <strong>Leadradar</strong>
+      <small id="brandAgency">Lorino Co.</small>
+    </div>
+  </div>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab is-active" data-view="liste">Anrufliste</button>
+    <button class="tab" data-view="suche">Leads finden</button>
+    <button class="tab" data-view="einstellungen">Einstellungen</button>
+  </nav>
+
+  <div class="topbar-right">
+    <a class="btn btn-ghost btn-sm" id="exportBtn" href="/api/export.csv" download>⬇ CSV</a>
+  </div>
+</header>
+
+<!-- ============================================ Kennzahlen ============ -->
+<section class="kpis" id="kpis"></section>
+
+<!-- ============================================ Ansicht: Suche ======== -->
+<main class="view" id="view-suche" hidden>
+  <div class="panel">
+    <h2>Neue Leads finden</h2>
+    <p class="muted">
+      Sucht Betriebe in einer Region, prüft automatisch deren Webseite und sortiert
+      sie nach Potenzial. Die Prüfung dauert je nach Anzahl 1–3 Minuten.
+    </p>
+
+    <div class="field">
+      <label>1 · Branchen <span class="muted">(Mehrfachauswahl)</span></label>
+      <div class="chips" id="tradeChips"></div>
+      <div class="chip-actions">
+        <button class="linkbtn" id="tradeAll">Alle</button>
+        <button class="linkbtn" id="tradeNone">Keine</button>
+        <button class="linkbtn" id="tradeHandwerk">Nur Bau &amp; Handwerk</button>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="field">
+        <label for="placeInput">2 · Ort oder Kanton</label>
+        <input id="placeInput" list="placeList" placeholder="z. B. Winterthur oder Kanton Aargau" value="Zürich">
+        <datalist id="placeList"></datalist>
+      </div>
+      <div class="field">
+        <label for="radiusInput">Umkreis: <output id="radiusOut">15</output> km</label>
+        <input id="radiusInput" type="range" min="2" max="60" step="1" value="15">
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="field">
+        <label for="sourceSelect">3 · Datenquelle</label>
+        <select id="sourceSelect"></select>
+        <small class="muted" id="sourceNote"></small>
+      </div>
+      <div class="field">
+        <label for="limitInput">Maximale Anzahl</label>
+        <select id="limitInput">
+          <option value="40">40 Betriebe (schnell)</option>
+          <option value="80" selected>80 Betriebe</option>
+          <option value="150">150 Betriebe</option>
+          <option value="300">300 Betriebe (dauert länger)</option>
+        </select>
+      </div>
+    </div>
+
+    <label class="checkline">
+      <input type="checkbox" id="auditCheck" checked>
+      <span>Webseiten automatisch prüfen <small class="muted">(das ist der eigentliche Wert – ohne Prüfung gibt es keinen Score)</small></span>
+    </label>
+
+    <div class="actions">
+      <button class="btn btn-primary btn-lg" id="searchBtn">🔍 Suche starten</button>
+    </div>
+
+    <div class="progress" id="searchProgress" hidden>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <p class="progress-step" id="progressStep">Start …</p>
+    </div>
+
+    <div class="notice" id="searchResult" hidden></div>
+  </div>
+
+  <div class="panel panel-soft">
+    <h3>Lead von Hand erfassen</h3>
+    <p class="muted">Betrieb, den du unterwegs gesehen hast? Hier eintragen – die Webseite wird sofort geprüft.</p>
+    <div class="grid-3">
+      <div class="field"><label>Firma *</label><input id="mName" placeholder="Muster Schreinerei AG"></div>
+      <div class="field"><label>Branche</label><select id="mTrade"></select></div>
+      <div class="field"><label>Telefon</label><input id="mPhone" placeholder="+41 …"></div>
+      <div class="field"><label>Ort</label><input id="mCity" placeholder="Winterthur"></div>
+      <div class="field"><label>E-Mail</label><input id="mEmail" type="email" placeholder="info@…"></div>
+      <div class="field"><label>Webseite</label><input id="mWebsite" placeholder="https://…"></div>
+    </div>
+    <button class="btn btn-secondary" id="manualAddBtn">+ Lead hinzufügen</button>
+  </div>
+</main>
+
+<!-- ============================================ Ansicht: Liste ======== -->
+<main class="view is-active" id="view-liste">
+  <div class="filters" id="filters">
+    <input id="fSearch" class="search" type="search" placeholder="🔎 Firma, Ort, Nummer …">
+    <select id="fStatus"></select>
+    <select id="fTier">
+      <option value="alle">Alle Einstufungen</option>
+      <option value="hot">🔥 Sehr heiss</option>
+      <option value="warm">🌡️ Heiss</option>
+      <option value="medium">👀 Interessant</option>
+      <option value="low">💤 Schwach</option>
+      <option value="none">✅ Kein Bedarf</option>
+    </select>
+    <select id="fWebsite">
+      <option value="alle">Alle Webseiten</option>
+      <option value="problem">Nur mit Problem</option>
+      <option value="none">Keine Webseite</option>
+      <option value="dead">Webseite tot</option>
+      <option value="parked">Platzhalterseite</option>
+      <option value="social_only">Nur Social Media</option>
+      <option value="ok">Webseite vorhanden</option>
+    </select>
+    <select id="fTrade"></select>
+    <select id="fCity"><option value="alle">Alle Orte</option></select>
+    <select id="fSort">
+      <option value="score">Sortieren: Potenzial</option>
+      <option value="reviews">Sortieren: Bewertungen</option>
+      <option value="distance">Sortieren: Distanz</option>
+      <option value="name">Sortieren: Name</option>
+      <option value="city">Sortieren: Ort</option>
+      <option value="newest">Sortieren: Neueste</option>
+      <option value="followup">Sortieren: Wiedervorlage</option>
+    </select>
+    <label class="toggle"><input type="checkbox" id="fPhone" checked> nur mit Nummer</label>
+    <label class="toggle"><input type="checkbox" id="fHideDone" checked> Erledigte ausblenden</label>
+  </div>
+
+  <div class="list-head">
+    <span id="listCount" class="muted">–</span>
+    <button class="linkbtn" id="legalBtn">⚖️ Rechtliche Hinweise</button>
+  </div>
+
+  <div class="leads" id="leads"></div>
+  <div class="empty" id="emptyState" hidden></div>
+  <div class="loadmore" id="loadMoreWrap" hidden>
+    <button class="btn btn-ghost" id="loadMoreBtn">Weitere laden</button>
+  </div>
+</main>
+
+<!-- ==================================== Ansicht: Einstellungen ======== -->
+<main class="view" id="view-einstellungen" hidden>
+  <div class="panel">
+    <h2>Dein Profil</h2>
+    <p class="muted">Diese Angaben landen in Anrufskript, E-Mail und WhatsApp-Nachricht.</p>
+    <div class="grid-2">
+      <div class="field"><label>Agenturname</label><input id="sAgencyName"></div>
+      <div class="field"><label>Dein Name</label><input id="sOwnerName"></div>
+      <div class="field"><label>Telefon</label><input id="sPhone"></div>
+      <div class="field"><label>E-Mail</label><input id="sEmail"></div>
+      <div class="field"><label>Webseite</label><input id="sWebsite"></div>
+      <div class="field"><label>Instagram</label><input id="sInstagram"></div>
+      <div class="field"><label>Slogan</label><input id="sSlogan"></div>
+      <div class="field"><label>Terminbuchung (Link, optional)</label><input id="sBookingUrl" placeholder="https://cal.com/…"></div>
+    </div>
+
+    <div class="field">
+      <label>Kurzbeschrieb</label>
+      <textarea id="sPitch" rows="2"></textarea>
+    </div>
+
+    <label class="checkline">
+      <input type="checkbox" id="sFreePreview">
+      <span><strong>Kostenlose Vorschau anbieten</strong> <small class="muted">– dein stärkstes Argument am Telefon</small></span>
+    </label>
+    <div class="field">
+      <label>Formulierung dazu</label>
+      <textarea id="sFreePreviewLine" rows="2"></textarea>
+    </div>
+
+    <div class="field">
+      <label>Verkaufsargumente <small class="muted">(eine pro Zeile – erscheinen im Gesprächsleitfaden)</small></label>
+      <textarea id="sUsps" rows="8"></textarea>
+    </div>
+
+    <button class="btn btn-primary" id="saveSettingsBtn">Speichern</button>
+    <span class="saved-hint" id="savedHint" hidden>✓ Gespeichert</span>
+  </div>
+
+  <div class="panel panel-soft">
+    <h3>Weitergabe an andere Tools</h3>
+    <p class="muted">
+      Leads per Klick an ein anderes System schicken (z. B. Agentur-OS oder Vertra).
+      Der Lead geht als JSON per POST an die hinterlegte Adresse.
+    </p>
+    <div id="webhookList"></div>
+    <button class="btn btn-secondary btn-sm" id="addWebhookBtn">+ Ziel hinzufügen</button>
+    <details class="details">
+      <summary>Welches Format wird geschickt?</summary>
+      <pre class="code" id="payloadSample">{
+  "quelle": "lorino-leadradar",
+  "firma": "Muster Schreinerei AG",
+  "branche": "Schreiner / Zimmerei",
+  "telefon": "+41 44 555 01 01",
+  "email": "info@muster.ch",
+  "adresse": { "plz": "8400", "ort": "Winterthur", "kanton": "ZH" },
+  "analyse": {
+    "websiteStatus": "Keine Website",
+    "problem": "Hat gar keine Webseite",
+    "score": 88,
+    "einstufung": "Sehr heiss"
+  },
+  "status": "neu"
+}</pre>
+    </details>
+  </div>
+
+  <div class="panel panel-soft">
+    <h3>Datenquellen</h3>
+    <div id="sourceStatus"></div>
+  </div>
+</main>
+
+<!-- ============================================ Detail-Panel ========== -->
+<aside class="detail" id="detail" hidden>
+  <div class="detail-inner" id="detailInner"></div>
+</aside>
+<div class="backdrop" id="backdrop" hidden></div>
+
+<!-- ============================================ Rechts-Modal ========== -->
+<div class="modal" id="legalModal" hidden>
+  <div class="modal-box">
+    <button class="modal-close" id="legalClose">✕</button>
+    <h2>⚖️ Rechtliche Hinweise</h2>
+    <p class="muted">Orientierungshilfe für die Schweiz – keine Rechtsberatung.</p>
+    <div id="legalContent"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="/app.js" type="module"></script>
+</body>
+</html>
