@@ -1,0 +1,1181 @@
+<title>Leadradar Demo · Lorino Co.</title>
+<style>
+/* ==========================================================================
+   Lorino Leadradar – Handy-Demo
+   Farben und Typografie folgen dem Auftritt von lorino-co.ch.
+   Systemschrift mit Absicht: auf dem iPhone SF Pro, auf Android Roboto –
+   die App soll sich anfühlen wie eine App, nicht wie eine Webseite.
+   ========================================================================== */
+
+:root {
+  color-scheme: light dark;
+
+  --blau: #2563eb;
+  --blau-tief: #1d4ed8;
+  --blau-flaeche: #eff6ff;
+  --gold: #f59e0b;
+  --gold-flaeche: #fffbeb;
+
+  --grund: #f6f7f9;
+  --flaeche: #ffffff;
+  --flaeche-2: #f1f4f8;
+  --linie: #dfe4ec;
+  --linie-stark: #c6cedb;
+
+  --tinte: #0f172a;
+  --tinte-2: #475569;
+  --tinte-3: #6b7787;
+
+  --rot: #dc2626;
+  --rot-flaeche: #fef2f2;
+  --orange: #ea580c;
+  --gelb: #b45309;
+  --gruen: #15803d;
+  --gruen-flaeche: #f0fdf4;
+
+  --schatten: 0 1px 2px rgba(15,23,42,.06), 0 1px 3px rgba(15,23,42,.05);
+  --schatten-hoch: 0 8px 28px rgba(15,23,42,.14);
+  --rund: 12px;
+  --rund-gross: 18px;
+}
+
+/* Dunkel, wenn das Gerät dunkel steht und nichts anderes gewählt wurde */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --blau: #5b8def;
+    --blau-tief: #7ba5f5;
+    --blau-flaeche: #16233d;
+    --gold: #fbbf24;
+    --gold-flaeche: #2a2113;
+
+    --grund: #0d1219;
+    --flaeche: #151c26;
+    --flaeche-2: #1c2531;
+    --linie: #27313f;
+    --linie-stark: #3a4657;
+
+    --tinte: #e9eef6;
+    --tinte-2: #a8b4c4;
+    --tinte-3: #8894a5;
+
+    --rot: #f87171;
+    --rot-flaeche: #2c1618;
+    --orange: #fb923c;
+    --gelb: #fbbf24;
+    --gruen: #4ade80;
+    --gruen-flaeche: #12251a;
+
+    --schatten: 0 1px 2px rgba(0,0,0,.4);
+    --schatten-hoch: 0 8px 28px rgba(0,0,0,.55);
+  }
+}
+
+/* Ausdrücklich dunkel gewählt */
+:root[data-theme="dark"] {
+  --blau: #5b8def;
+  --blau-tief: #7ba5f5;
+  --blau-flaeche: #16233d;
+  --gold: #fbbf24;
+  --gold-flaeche: #2a2113;
+
+  --grund: #0d1219;
+  --flaeche: #151c26;
+  --flaeche-2: #1c2531;
+  --linie: #27313f;
+  --linie-stark: #3a4657;
+
+  --tinte: #e9eef6;
+  --tinte-2: #a8b4c4;
+  --tinte-3: #8894a5;
+
+  --rot: #f87171;
+  --rot-flaeche: #2c1618;
+  --orange: #fb923c;
+  --gelb: #fbbf24;
+  --gruen: #4ade80;
+  --gruen-flaeche: #12251a;
+
+  --schatten: 0 1px 2px rgba(0,0,0,.4);
+  --schatten-hoch: 0 8px 28px rgba(0,0,0,.55);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+  background: var(--grund);
+  color: var(--tinte);
+  line-height: 1.5;
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+  padding-bottom: 30px;
+}
+
+button, input, select, textarea { font: inherit; color: inherit; }
+a { color: var(--blau); text-decoration: none; }
+:focus-visible { outline: 2px solid var(--blau); outline-offset: 2px; border-radius: 6px; }
+[hidden] { display: none !important; }
+.tab-nums { font-variant-numeric: tabular-nums; }
+
+/* ------------------------------------------------------------- Hinweisband */
+.band {
+  background: var(--gold-flaeche);
+  border-bottom: 1px solid color-mix(in srgb, var(--gold) 35%, transparent);
+  padding: 9px 16px;
+  font-size: 12.5px;
+  color: var(--tinte-2);
+  text-align: center;
+}
+.band b { color: var(--tinte); }
+
+/* -------------------------------------------------------------- Kopfzeile */
+.kopf {
+  position: sticky; top: 0; z-index: 30;
+  background: color-mix(in srgb, var(--flaeche) 92%, transparent);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--linie);
+}
+.kopf-innen {
+  max-width: 760px; margin: 0 auto; padding: 10px 16px;
+  display: flex; align-items: center; gap: 12px;
+}
+.marke { display: flex; align-items: center; gap: 9px; flex: 1; min-width: 0; }
+.marke-zeichen {
+  width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--blau), var(--blau-tief));
+  display: grid; place-items: center;
+}
+.marke-text strong { display: block; font-size: 15px; letter-spacing: -.02em; line-height: 1.2; }
+.marke-text span { font-size: 11px; color: var(--tinte-3); }
+
+.reiter {
+  max-width: 760px; margin: 0 auto; padding: 0 16px 9px;
+  display: flex; gap: 4px;
+}
+.reiter button {
+  flex: 1; border: 0; background: transparent; cursor: pointer;
+  padding: 8px 4px; border-radius: 8px;
+  font-size: 13px; font-weight: 550; color: var(--tinte-3);
+}
+.reiter button.an { background: var(--blau-flaeche); color: var(--blau); font-weight: 650; }
+
+main { max-width: 760px; margin: 0 auto; padding: 16px; }
+
+/* ------------------------------------------------------------- Tageszahlen */
+.tageszahlen {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+  gap: 7px; margin-bottom: 14px;
+}
+.zahl {
+  background: var(--flaeche); border: 1px solid var(--linie);
+  border-radius: 10px; padding: 9px 8px; text-align: center;
+}
+.zahl b { display: block; font-size: 18px; font-weight: 700; line-height: 1.15; letter-spacing: -.02em; }
+.zahl span { font-size: 10.5px; color: var(--tinte-3); }
+.zahl.rest { background: var(--blau-flaeche); border-color: color-mix(in srgb, var(--blau) 30%, transparent); }
+.zahl.rest b { color: var(--blau); }
+
+/* ------------------------------------------------------------ Anrufkarte */
+.anrufkarte {
+  background: var(--flaeche); border: 1px solid var(--linie);
+  border-radius: var(--rund-gross); padding: 20px;
+  box-shadow: var(--schatten);
+}
+.ak-zaehler {
+  font-size: 11px; font-weight: 700; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--tinte-3); margin-bottom: 7px;
+}
+.anrufkarte h2 { font-size: 24px; line-height: 1.15; letter-spacing: -.025em; text-wrap: balance; }
+.ak-adresse { font-size: 14px; color: var(--tinte-3); margin-top: 4px; }
+.ak-pillen { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+
+.pille {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 9px; border-radius: 99px;
+  font-size: 11.5px; font-weight: 650;
+  background: var(--flaeche-2); color: var(--tinte-2);
+}
+
+.ak-problem {
+  margin: 16px 0; padding: 13px 15px; border-radius: 11px;
+  background: var(--gold-flaeche);
+  border: 1px solid color-mix(in srgb, var(--gold) 40%, transparent);
+  font-size: 15.5px; font-weight: 550; color: var(--tinte);
+}
+
+.ak-nummer {
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  width: 100%; padding: 17px; border: 0; cursor: pointer;
+  background: var(--blau); color: #fff;
+  border-radius: 13px; font-size: 20px; font-weight: 700;
+  letter-spacing: .01em; font-variant-numeric: tabular-nums;
+  text-decoration: none;
+}
+.ak-nummer:active { background: var(--blau-tief); transform: translateY(1px); }
+
+.ak-skript {
+  margin-top: 16px; padding: 14px 15px; border-radius: 11px;
+  background: var(--blau-flaeche);
+  border: 1px solid color-mix(in srgb, var(--blau) 25%, transparent);
+}
+.ak-skript h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--blau); margin-bottom: 7px;
+}
+.ak-skript p { font-size: 15px; line-height: 1.6; white-space: pre-wrap; }
+
+.abschnitt-titel {
+  font-size: 11px; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--tinte-3); font-weight: 700; margin: 20px 0 9px;
+}
+
+.ergebnisse { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.ergebnis {
+  display: flex; align-items: center; gap: 8px; text-align: left;
+  border: 1.5px solid var(--linie); background: var(--flaeche);
+  border-radius: 11px; padding: 12px 11px; cursor: pointer;
+  font-size: 13px; font-weight: 550; line-height: 1.25;
+  transition: background .12s, border-color .12s, transform .08s;
+}
+.ergebnis:active { transform: scale(.97); }
+.ergebnis:hover { background: var(--flaeche-2); }
+.ergebnis em { font-size: 17px; font-style: normal; line-height: 1; }
+
+.werkzeuge { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 16px; }
+
+/* ------------------------------------------------------------------ Knöpfe */
+.knopf {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  border: 1px solid var(--linie-stark); background: var(--flaeche);
+  border-radius: 9px; padding: 9px 14px; cursor: pointer;
+  font-size: 13.5px; font-weight: 600; color: var(--tinte);
+  text-decoration: none;
+}
+.knopf:hover { background: var(--flaeche-2); }
+.knopf.klein { padding: 6px 11px; font-size: 12.5px; }
+.knopf.haupt { background: var(--blau); border-color: var(--blau); color: #fff; }
+.knopf.haupt:hover { background: var(--blau-tief); }
+.knopf.gold { background: var(--gold); border-color: var(--gold); color: #1c1508; }
+.knopf.stumm { border-color: transparent; background: transparent; color: var(--tinte-3); }
+
+/* ------------------------------------------------------------------ Filter */
+.filter {
+  display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 12px;
+}
+.filter select, .filter input {
+  flex: 1 1 132px; min-width: 0;
+  border: 1px solid var(--linie-stark); border-radius: 9px;
+  padding: 8px 10px; font-size: 13px;
+  background: var(--flaeche); color: var(--tinte);
+}
+.filter input { flex: 1 1 100%; font-size: 16px; } /* 16px verhindert Zoom auf iOS */
+
+.listenkopf {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 10px; font-size: 13px; color: var(--tinte-3);
+}
+
+/* ------------------------------------------------------------------- Leads */
+.leads { display: flex; flex-direction: column; gap: 8px; }
+.lead {
+  display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start;
+  background: var(--flaeche); border: 1px solid var(--linie);
+  border-left: 4px solid var(--stufe, var(--linie-stark));
+  border-radius: var(--rund); padding: 12px 14px;
+  cursor: pointer; text-align: left; width: 100%;
+}
+.lead:hover { box-shadow: var(--schatten-hoch); }
+.lead.erledigt { opacity: .45; }
+
+.punktzahl {
+  width: 44px; height: 44px; border-radius: 11px;
+  display: grid; place-items: center; align-content: center;
+  background: color-mix(in srgb, var(--stufe) 12%, transparent);
+  flex-shrink: 0;
+}
+.punktzahl b { font-size: 16px; font-weight: 800; color: var(--stufe); line-height: 1; font-variant-numeric: tabular-nums; }
+.punktzahl span { font-size: 12px; line-height: 1.3; }
+
+.lead-name { font-weight: 650; font-size: 15px; letter-spacing: -.01em; }
+.lead-problem { font-size: 13px; color: var(--tinte-2); margin-top: 2px; }
+.lead-zeile {
+  display: flex; flex-wrap: wrap; gap: 3px 11px; margin-top: 6px;
+  font-size: 12px; color: var(--tinte-3);
+}
+
+/* ------------------------------------------------------------------ Detail */
+.blende {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(9, 13, 20, .5);
+  animation: einblenden .15s ease-out;
+}
+@keyframes einblenden { from { opacity: 0 } to { opacity: 1 } }
+
+.tafel {
+  position: fixed; z-index: 61; background: var(--flaeche);
+  inset: auto 0 0 0; max-height: 92vh; overflow-y: auto;
+  border-radius: 20px 20px 0 0;
+  box-shadow: var(--schatten-hoch);
+  animation: hochschieben .22s cubic-bezier(.32,.72,0,1);
+  padding: 8px 18px 40px;
+  -webkit-overflow-scrolling: touch;
+}
+@keyframes hochschieben { from { transform: translateY(18px); opacity: 0 } to { transform: none; opacity: 1 } }
+.griff {
+  width: 38px; height: 4px; border-radius: 99px; background: var(--linie-stark);
+  margin: 6px auto 14px;
+}
+@media (min-width: 720px) {
+  .tafel { inset: 0 0 0 auto; width: 480px; max-height: none; border-radius: 0; padding-top: 20px; }
+  .griff { display: none; }
+  @keyframes hochschieben { from { transform: translateX(20px); opacity: 0 } to { transform: none; opacity: 1 } }
+}
+
+.detail-kopf { display: flex; justify-content: space-between; gap: 12px; align-items: start; }
+.detail-kopf h2 { font-size: 20px; line-height: 1.2; letter-spacing: -.02em; text-wrap: balance; }
+.schliessen {
+  border: 0; background: var(--flaeche-2); border-radius: 8px;
+  width: 32px; height: 32px; cursor: pointer; flex-shrink: 0; font-size: 15px;
+}
+
+.gruende { display: flex; flex-wrap: wrap; gap: 6px; }
+.grund {
+  font-size: 12px; padding: 4px 10px; border-radius: 8px;
+  background: var(--rot-flaeche); color: var(--rot);
+  border: 1px solid color-mix(in srgb, var(--rot) 30%, transparent);
+}
+.grund.gut { background: var(--gruen-flaeche); color: var(--gruen); border-color: color-mix(in srgb, var(--gruen) 30%, transparent); }
+.grund.warn { background: var(--gold-flaeche); color: var(--gelb); border-color: color-mix(in srgb, var(--gold) 35%, transparent); }
+
+.schritt {
+  border: 1px solid var(--linie); border-radius: 10px;
+  padding: 11px 13px; margin-bottom: 7px; background: var(--flaeche-2);
+}
+.schritt h4 { font-size: 12.5px; color: var(--blau); margin-bottom: 3px; }
+.schritt .wink { font-size: 11.5px; color: var(--tinte-3); font-style: italic; margin-bottom: 6px; }
+.schritt p { font-size: 14px; white-space: pre-wrap; line-height: 1.55; }
+
+.fakten { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+.fakten li { font-size: 13px; color: var(--tinte-2); padding-left: 15px; position: relative; }
+.fakten li::before { content: '·'; position: absolute; left: 4px; color: var(--blau); font-weight: 800; }
+
+.kopierkasten {
+  border: 1px solid var(--linie); border-radius: 10px; background: var(--flaeche-2);
+  padding: 11px 12px; font-size: 13px; white-space: pre-wrap; line-height: 1.55;
+  max-height: 200px; overflow-y: auto;
+}
+.kopierzeile { display: flex; justify-content: space-between; align-items: center; margin: 12px 0 6px; }
+.kopierzeile strong { font-size: 12.5px; }
+.linkknopf {
+  background: none; border: 0; color: var(--blau); cursor: pointer;
+  font-size: 12.5px; font-weight: 600; text-decoration: underline;
+}
+
+.daten { display: grid; grid-template-columns: auto 1fr; gap: 5px 14px; font-size: 13px; }
+.daten dt { color: var(--tinte-3); }
+.daten dd { word-break: break-word; }
+
+/* -------------------------------------------------------------------- Rest */
+.leer { text-align: center; padding: 50px 20px; color: var(--tinte-3); }
+.leer h3 { color: var(--tinte); font-size: 17px; margin-bottom: 6px; }
+
+.meldung {
+  position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%);
+  background: var(--tinte); color: var(--grund);
+  padding: 11px 18px; border-radius: 11px; font-size: 14px; font-weight: 550;
+  z-index: 90; box-shadow: var(--schatten-hoch); max-width: 90vw; text-align: center;
+  animation: aufpoppen .2s ease-out;
+}
+@keyframes aufpoppen { from { opacity: 0; transform: translate(-50%, 8px) } to { opacity: 1; transform: translate(-50%, 0) } }
+
+.recht-eintrag { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--linie); }
+.recht-eintrag h4 { font-size: 13.5px; margin-bottom: 4px; }
+.recht-eintrag p { font-size: 13px; color: var(--tinte-2); line-height: 1.6; }
+
+.fuss {
+  margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--linie);
+  font-size: 12.5px; color: var(--tinte-3); display: flex;
+  flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+</style>
+
+<div class="band">
+  <b>Demo mit erfundenen Betrieben.</b> Die Nummern gehören niemandem – nicht anrufen.
+</div>
+
+<header class="kopf">
+  <div class="kopf-innen">
+    <div class="marke">
+      <div class="marke-zeichen">
+        <svg width="19" height="19" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+          <circle cx="50" cy="72" r="7" fill="#fff"/>
+          <path d="M50 52a20 20 0 0 1 20 20" stroke="#fff" stroke-width="8" stroke-linecap="round" opacity=".95"/>
+          <path d="M50 34a38 38 0 0 1 38 38" stroke="#fff" stroke-width="8" stroke-linecap="round" opacity=".6"/>
+          <circle cx="24" cy="30" r="9" fill="#f59e0b"/>
+        </svg>
+      </div>
+      <div class="marke-text">
+        <strong>Leadradar</strong>
+        <span>Lorino Co.</span>
+      </div>
+    </div>
+    <button class="knopf klein" id="csvKnopf">CSV</button>
+  </div>
+  <nav class="reiter">
+    <button data-ansicht="anrufen" class="an">📞 Anrufen</button>
+    <button data-ansicht="liste">Liste</button>
+    <button data-ansicht="info">Info</button>
+  </nav>
+</header>
+
+<main>
+  <!-- ------------------------------------------------------ Anruf-Modus -->
+  <section id="ansicht-anrufen">
+    <div class="tageszahlen" id="tageszahlen"></div>
+    <div class="filter">
+      <select id="qBranche"></select>
+      <select id="qScore">
+        <option value="0">Alle Leads</option>
+        <option value="55">Ab 55 Punkten</option>
+        <option value="75" selected>Ab 75 – nur die heissesten</option>
+      </select>
+    </div>
+    <div id="anrufBereich"></div>
+  </section>
+
+  <!-- ------------------------------------------------------------ Liste -->
+  <section id="ansicht-liste" hidden>
+    <div class="filter">
+      <input type="search" id="fSuche" placeholder="Firma, Ort oder Nummer suchen">
+      <select id="fBranche"></select>
+      <select id="fWebseite">
+        <option value="alle">Alle Webseiten</option>
+        <option value="problem">Nur mit Problem</option>
+        <option value="none">Keine Webseite</option>
+        <option value="dead">Webseite tot</option>
+        <option value="social_only">Nur Social Media</option>
+        <option value="ok">Webseite vorhanden</option>
+      </select>
+      <select id="fBewertungen">
+        <option value="alle">Alle Bewertungen</option>
+        <option value="keine">Keine Bewertungen</option>
+        <option value="wenige">Wenige (unter 15)</option>
+        <option value="viele">Viele (ab 15)</option>
+      </select>
+      <select id="fSterne">
+        <option value="alle">Alle Sterne</option>
+        <option value="schlecht">Schlecht (unter 3.5★)</option>
+        <option value="mittel">Mittel</option>
+        <option value="gut">Gut (ab 4.2★)</option>
+      </select>
+      <select id="fStatus">
+        <option value="alle">Alle Status</option>
+      </select>
+    </div>
+    <div class="listenkopf">
+      <span id="listenzahl">–</span>
+      <button class="linkknopf" id="rechtKnopf">⚖️ Rechtliches</button>
+    </div>
+    <div class="leads" id="leadListe"></div>
+    <div class="leer" id="listeLeer" hidden>
+      <h3>Nichts gefunden</h3>
+      <p>Für diese Filter gibt es keinen Betrieb. Stell einen Filter zurück.</p>
+    </div>
+  </section>
+
+  <!-- -------------------------------------------------------------- Info -->
+  <section id="ansicht-info" hidden></section>
+
+  <div class="fuss">
+    <span>Lorino Co. · <span id="fussTelefon"></span></span>
+    <button class="linkknopf" id="zuruecksetzen">Demo zurücksetzen</button>
+  </div>
+</main>
+
+<div id="tafelBereich"></div>
+
+<script id="demodaten" type="application/json">__DATEN__</script>
+<script>
+(() => {
+  'use strict';
+
+  const DATEN = JSON.parse(document.getElementById('demodaten').textContent);
+  const SPEICHER = 'leadradar-demo-v1';
+
+  // -------------------------------------------------------------- Werkzeug
+
+  /** Baut ein Element. Strings landen immer als Text, nie als HTML. */
+  function h(tag, eigenschaften = {}, ...kinder) {
+    const el = document.createElement(tag);
+    for (const [schluessel, wert] of Object.entries(eigenschaften || {})) {
+      if (wert == null || wert === false) continue;
+      if (schluessel === 'class') el.className = wert;
+      else if (schluessel === 'text') el.textContent = wert;
+      else if (schluessel === 'style' && typeof wert === 'object') Object.assign(el.style, wert);
+      else if (schluessel.startsWith('on') && typeof wert === 'function') {
+        el.addEventListener(schluessel.slice(2).toLowerCase(), wert);
+      } else if (wert === true) el.setAttribute(schluessel, '');
+      else el.setAttribute(schluessel, wert);
+    }
+    for (const kind of kinder.flat()) {
+      if (kind == null || kind === false) continue;
+      el.append(kind instanceof Node ? kind : document.createTextNode(String(kind)));
+    }
+    return el;
+  }
+
+  const $ = (w) => document.querySelector(w);
+  const leeren = (el) => { while (el.firstChild) el.removeChild(el.firstChild); return el; };
+
+  let meldungsUhr;
+  function melden(text, dauer = 2600) {
+    document.querySelector('.meldung')?.remove();
+    const el = h('div', { class: 'meldung', text });
+    document.body.append(el);
+    clearTimeout(meldungsUhr);
+    meldungsUhr = setTimeout(() => el.remove(), dauer);
+  }
+
+  async function kopieren(text, was) {
+    try {
+      await navigator.clipboard.writeText(text);
+      melden('✓ ' + was + ' kopiert');
+    } catch {
+      const feld = h('textarea', { style: { position: 'fixed', opacity: '0' } });
+      feld.value = text;
+      document.body.append(feld);
+      feld.select();
+      document.execCommand('copy');
+      feld.remove();
+      melden('✓ ' + was + ' kopiert');
+    }
+  }
+
+  const telLink = (nummer) => 'tel:' + String(nummer).replace(/[^\d+]/g, '');
+  const waLink = (nummer, text) =>
+    'https://wa.me/' + String(nummer).replace(/\D/g, '') + '?text=' + encodeURIComponent(text);
+
+  const heuteSchluessel = () => new Date().toISOString().slice(0, 10);
+
+  // --------------------------------------------------------------- Zustand
+
+  const ERGEBNIS_NACH_ID = new Map(DATEN.ergebnisse.map((e) => [e.id, e]));
+  const STATUS_NACH_ID = new Map(DATEN.statuses.map((s) => [s.id, s]));
+
+  /** Was der Nutzer in dieser Demo gemacht hat – bleibt im Browser. */
+  let verlauf = laden();
+
+  function laden() {
+    try {
+      const roh = localStorage.getItem(SPEICHER);
+      return roh ? JSON.parse(roh) : {};
+    } catch {
+      return {};
+    }
+  }
+
+  function sichern() {
+    try {
+      localStorage.setItem(SPEICHER, JSON.stringify(verlauf));
+    } catch {
+      /* Privater Modus: dann hält es eben nur bis zum Neuladen */
+    }
+  }
+
+  const zustandVon = (id) => verlauf[id] || { status: 'neu', versuche: 0, notizen: [], verlauf: [] };
+
+  const zustand = {
+    ansicht: 'anrufen',
+    reihe: [],
+    zeiger: 0,
+  };
+
+  // ------------------------------------------------------- Warteschlange
+
+  /**
+   * Wer ist als Nächstes dran? Gleiche Regeln wie in der richtigen App:
+   * fällige Wiedervorlagen zuerst, dann nach Potenzial. Ohne Nummer,
+   * abgelehnt oder heute schon versucht fliegt raus.
+   */
+  function warteschlangeBauen() {
+    const heute = heuteSchluessel();
+    const minPunkte = Number($('#qScore').value);
+    const branche = $('#qBranche').value;
+
+    zustand.reihe = DATEN.leads.filter((lead) => {
+      const z = zustandVon(lead.id);
+      if (!lead.phone) return false;
+      if (['abgelehnt', 'kunde', 'nichtstoeren'].includes(z.status)) return false;
+      if (z.zuletztAm === heute) return false;
+      if (z.wiedervorlage && z.wiedervorlage > heute) return false;
+      if (branche !== 'alle' && lead.trade !== branche) return false;
+      if (lead.score < minPunkte) return false;
+      return true;
+    }).sort((a, b) => {
+      const aFaellig = zustandVon(a.id).wiedervorlage ? 0 : 1;
+      const bFaellig = zustandVon(b.id).wiedervorlage ? 0 : 1;
+      if (aFaellig !== bFaellig) return aFaellig - bFaellig;
+      return b.score - a.score;
+    });
+
+    zustand.zeiger = 0;
+  }
+
+  function tagesZahlen() {
+    const heute = heuteSchluessel();
+    let anrufe = 0, erreicht = 0, combox = 0, termine = 0;
+
+    for (const eintrag of Object.values(verlauf)) {
+      for (const e of eintrag.verlauf || []) {
+        if (e.tag !== heute) continue;
+        anrufe++;
+        if (e.ergebnis === 'combox') combox++;
+        if (['erreicht', 'termin', 'unterlagen', 'rueckruf'].includes(e.ergebnis)) erreicht++;
+        if (e.ergebnis === 'termin') termine++;
+      }
+    }
+    return { anrufe, erreicht, combox, termine, quote: anrufe ? Math.round((erreicht / anrufe) * 100) : 0 };
+  }
+
+  function tageszahlenZeigen() {
+    const t = tagesZahlen();
+    const offen = Math.max(0, zustand.reihe.length - zustand.zeiger);
+    const zahl = (wert, text, klasse = '') =>
+      h('div', { class: 'zahl ' + klasse },
+        h('b', { class: 'tab-nums', text: String(wert) }),
+        h('span', { text }));
+
+    leeren($('#tageszahlen')).append(
+      zahl(t.anrufe, 'Anrufe heute'),
+      zahl(t.erreicht, 'erreicht'),
+      zahl(t.combox, 'Combox'),
+      zahl(t.termine, 'Termine'),
+      zahl(t.quote + '%', 'Trefferquote'),
+      zahl(offen, 'noch offen', 'rest'),
+    );
+  }
+
+  // ---------------------------------------------------------- Anruf-Modus
+
+  function anrufKarteZeigen() {
+    const bereich = leeren($('#anrufBereich'));
+    const lead = zustand.reihe[zustand.zeiger];
+    tageszahlenZeigen();
+
+    if (!lead) {
+      bereich.append(h('div', { class: 'leer' },
+        h('h3', {}, '🎉 Für heute durch'),
+        h('p', {}, 'Keine offenen Leads mehr in dieser Auswahl. Erweitere den Filter oben – oder mach Feierabend.')));
+      return;
+    }
+
+    const z = zustandVon(lead.id);
+    const karte = h('article', { class: 'anrufkarte' });
+
+    karte.append(
+      h('div', { class: 'ak-zaehler tab-nums', text: `${zustand.zeiger + 1} von ${zustand.reihe.length}` }),
+      h('h2', { text: lead.name }),
+      h('p', { class: 'ak-adresse', text: [lead.address.street, lead.address.zip, lead.address.city].filter(Boolean).join(', ') }),
+    );
+
+    const pillen = h('div', { class: 'ak-pillen' });
+    pillen.append(h('span', {
+      class: 'pille',
+      style: { background: 'color-mix(in srgb, ' + lead.tier.color + ' 15%, transparent)', color: lead.tier.color },
+      text: `${lead.tier.emoji} ${lead.score}/100`,
+    }));
+    if (lead.googleReviews != null) {
+      pillen.append(h('span', { class: 'pille',
+        text: lead.googleReviews === 0 ? '⭐ keine Bewertungen' : `⭐ ${lead.googleRating} (${lead.googleReviews})` }));
+    }
+    if (z.versuche) pillen.append(h('span', { class: 'pille', text: `${z.versuche + 1}. Versuch` }));
+    if (z.wiedervorlage) pillen.append(h('span', { class: 'pille', text: 'Wiedervorlage fällig' }));
+    karte.append(pillen);
+
+    karte.append(h('div', { class: 'ak-problem', text: lead.headline }));
+
+    karte.append(h('a', {
+      class: 'ak-nummer', href: telLink(lead.phone),
+    }, '📞 ' + lead.phone));
+
+    karte.append(h('div', { class: 'ak-skript' },
+      h('h3', { text: 'Wenn er abnimmt' }),
+      h('p', { text: lead.script.steps[0].text })));
+
+    karte.append(h('div', { class: 'abschnitt-titel', text: 'Wie ist es gelaufen?' }));
+    const knoepfe = h('div', { class: 'ergebnisse' });
+    for (const e of DATEN.ergebnisse) {
+      knoepfe.append(h('button', {
+        class: 'ergebnis',
+        style: { borderColor: 'color-mix(in srgb, ' + e.farbe + ' 45%, transparent)' },
+        onClick: () => ergebnisSetzen(lead, e),
+      }, h('em', { text: e.emoji }), h('span', { text: e.label })));
+    }
+    karte.append(knoepfe);
+
+    const werkzeuge = h('div', { class: 'werkzeuge' });
+    werkzeuge.append(h('a', {
+      class: 'knopf', href: waLink(lead.phone, lead.whatsapp), target: '_blank', rel: 'noopener',
+    }, '💬 WhatsApp'));
+    if (lead.email) {
+      werkzeuge.append(h('a', {
+        class: 'knopf',
+        href: `mailto:${lead.email}?subject=${encodeURIComponent(lead.email_v.subject)}&body=${encodeURIComponent(lead.email_v.body)}`,
+      }, '✉️ E-Mail'));
+    }
+    werkzeuge.append(h('button', { class: 'knopf', onClick: () => detailZeigen(lead) }, 'ℹ️ Details'));
+    werkzeuge.append(h('button', { class: 'knopf stumm', onClick: naechster }, 'Überspringen →'));
+    karte.append(werkzeuge);
+
+    bereich.append(karte);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function ergebnisSetzen(lead, ergebnis) {
+    const z = { ...zustandVon(lead.id) };
+    const heute = heuteSchluessel();
+
+    z.status = ergebnis.status;
+    z.versuche = (z.versuche || 0) + 1;
+    z.zuletztAm = heute;
+    z.letztesErgebnis = ergebnis.id;
+    z.verlauf = [{ tag: heute, zeit: new Date().toISOString(), ergebnis: ergebnis.id, text: ergebnis.label }, ...(z.verlauf || [])].slice(0, 50);
+
+    // Wiedervorlage genauso setzen wie die richtige App
+    if (typeof ergebnis.wiedervorlageTage === 'number') {
+      const ziel = new Date();
+      ziel.setDate(ziel.getDate() + ergebnis.wiedervorlageTage);
+      z.wiedervorlage = ziel.toISOString().slice(0, 10);
+    } else if (ergebnis.brauchtDatum) {
+      const ziel = new Date();
+      ziel.setDate(ziel.getDate() + 2);
+      z.wiedervorlage = ziel.toISOString().slice(0, 10);
+    } else if (['abgelehnt', 'nichtstoeren'].includes(ergebnis.status)) {
+      z.wiedervorlage = null;
+    }
+
+    verlauf[lead.id] = z;
+    sichern();
+
+    // Nach mehreren erfolglosen Versuchen den Kanal wechseln
+    const erfolglos = (z.verlauf || []).slice(0, 4)
+      .filter((e) => ['combox', 'niemand', 'besetzt'].includes(e.ergebnis)).length;
+    if (ergebnis.kontaktlos && erfolglos >= 3) {
+      melden(`${lead.name} war ${erfolglos}× nicht erreichbar – versuch WhatsApp oder E-Mail.`, 4200);
+    } else {
+      melden(`${ergebnis.emoji} ${ergebnis.label} gespeichert`);
+    }
+
+    naechster();
+  }
+
+  function naechster() {
+    zustand.zeiger++;
+    anrufKarteZeigen();
+    if (zustand.ansicht === 'liste') listeZeigen();
+  }
+
+  // ---------------------------------------------------------------- Liste
+
+  function gefilterteLeads() {
+    const suche = $('#fSuche').value.trim().toLowerCase();
+    const branche = $('#fBranche').value;
+    const webseite = $('#fWebseite').value;
+    const bewertungen = $('#fBewertungen').value;
+    const sterne = $('#fSterne').value;
+    const status = $('#fStatus').value;
+
+    return DATEN.leads.filter((lead) => {
+      const z = zustandVon(lead.id);
+      if (suche) {
+        const heuhaufen = [lead.name, lead.address.city, lead.phone, lead.email, lead.website]
+          .filter(Boolean).join(' ').toLowerCase();
+        if (!heuhaufen.includes(suche)) return false;
+      }
+      if (branche !== 'alle' && lead.trade !== branche) return false;
+      if (webseite === 'problem' && lead.audit.status === 'ok') return false;
+      if (webseite !== 'alle' && webseite !== 'problem' && lead.audit.status !== webseite) return false;
+      if (bewertungen !== 'alle' && lead.bewertungsKlasse !== bewertungen) return false;
+      if (sterne !== 'alle' && lead.sterneKlasse !== sterne) return false;
+      if (status !== 'alle' && z.status !== status) return false;
+      return true;
+    });
+  }
+
+  function listeZeigen() {
+    const treffer = gefilterteLeads();
+    const liste = leeren($('#leadListe'));
+    $('#listenzahl').textContent = treffer.length === 1 ? '1 Betrieb' : `${treffer.length} Betriebe`;
+    $('#listeLeer').hidden = treffer.length > 0;
+
+    for (const lead of treffer) {
+      const z = zustandVon(lead.id);
+      const status = STATUS_NACH_ID.get(z.status);
+      const erledigt = ['abgelehnt', 'kunde', 'nichtstoeren'].includes(z.status);
+
+      const zeile = h('button', {
+        class: 'lead' + (erledigt ? ' erledigt' : ''),
+        style: { '--stufe': lead.tier.color },
+        onClick: () => detailZeigen(lead),
+      });
+
+      const kopf = h('div', {},
+        h('div', { class: 'lead-name', text: lead.name }),
+        h('div', { class: 'lead-problem', text: lead.headline }));
+
+      const zeile2 = h('div', { class: 'lead-zeile' });
+      if (lead.address.city) zeile2.append(h('span', { text: '📍 ' + lead.address.city }));
+      if (lead.phone) zeile2.append(h('span', { class: 'tab-nums', text: '📞 ' + lead.phone }));
+      if (lead.googleReviews != null) {
+        zeile2.append(h('span', { text: lead.googleReviews === 0 ? '⭐ 0' : `⭐ ${lead.googleRating} (${lead.googleReviews})` }));
+      }
+      if (z.status !== 'neu' && status) {
+        zeile2.append(h('span', { class: 'pille', style: { color: status.color }, text: status.label }));
+      }
+      kopf.append(zeile2);
+
+      zeile.append(
+        h('div', { class: 'punktzahl' },
+          h('b', { text: String(lead.score) }),
+          h('span', { text: lead.tier.emoji })),
+        kopf,
+      );
+      liste.append(zeile);
+    }
+  }
+
+  // --------------------------------------------------------------- Detail
+
+  function detailZeigen(lead) {
+    const bereich = leeren($('#tafelBereich'));
+    const z = zustandVon(lead.id);
+
+    const schliessen = () => { leeren($('#tafelBereich')); document.body.style.overflow = ''; };
+    document.body.style.overflow = 'hidden';
+
+    bereich.append(h('div', { class: 'blende', onClick: schliessen }));
+    const tafel = h('div', { class: 'tafel', role: 'dialog', 'aria-label': lead.name });
+    bereich.append(tafel);
+
+    tafel.append(h('div', { class: 'griff' }));
+    tafel.append(h('div', { class: 'detail-kopf' },
+      h('div', {},
+        h('h2', { text: lead.name }),
+        h('p', { style: { fontSize: '13px', color: 'var(--tinte-3)', marginTop: '3px' },
+          text: [lead.tradeLabel, lead.address.city].filter(Boolean).join(' · ') })),
+      h('button', { class: 'schliessen', onClick: schliessen, 'aria-label': 'Schliessen' }, '✕')));
+
+    // Direktaktionen
+    const aktionen = h('div', { class: 'werkzeuge', style: { marginTop: '14px' } });
+    aktionen.append(h('a', { class: 'knopf haupt', href: telLink(lead.phone) }, '📞 ' + lead.phone));
+    aktionen.append(h('a', { class: 'knopf gold', href: waLink(lead.phone, lead.whatsapp), target: '_blank', rel: 'noopener' }, '💬 WhatsApp'));
+    if (lead.email) {
+      aktionen.append(h('a', {
+        class: 'knopf',
+        href: `mailto:${lead.email}?subject=${encodeURIComponent(lead.email_v.subject)}&body=${encodeURIComponent(lead.email_v.body)}`,
+      }, '✉️ E-Mail'));
+    }
+    if (lead.website) {
+      aktionen.append(h('a', { class: 'knopf', href: lead.website, target: '_blank', rel: 'noopener nofollow' }, '🌐 Webseite'));
+    }
+    tafel.append(aktionen);
+
+    // Warum dieser Lead
+    tafel.append(h('div', { class: 'abschnitt-titel', text: 'Warum dieser Lead' }));
+    const gruende = h('div', { class: 'gruende' });
+    for (const g of lead.reasons.slice(0, 12)) {
+      gruende.append(h('span', { class: 'grund ' + (g.kind === 'good' ? 'gut' : g.kind === 'warn' ? 'warn' : ''), text: g.label }));
+    }
+    tafel.append(gruende);
+
+    // Gesprächsleitfaden
+    tafel.append(h('div', { class: 'abschnitt-titel', text: '📞 Gesprächsleitfaden' }));
+    for (const s of lead.script.steps) {
+      tafel.append(h('div', { class: 'schritt' },
+        h('h4', { text: s.title }),
+        s.hint ? h('div', { class: 'wink', text: s.hint }) : null,
+        h('p', { text: s.text })));
+    }
+    tafel.append(h('button', {
+      class: 'knopf klein',
+      onClick: () => kopieren(lead.script.steps.map((s) => s.title + '\n' + s.text).join('\n\n'), 'Leitfaden'),
+    }, '📋 Leitfaden kopieren'));
+
+    // Fakten
+    if (lead.script.facts.length) {
+      tafel.append(h('div', { class: 'abschnitt-titel', text: 'Fakten fürs Gespräch' }));
+      tafel.append(h('ul', { class: 'fakten' }, ...lead.script.facts.map((f) => h('li', { text: f }))));
+    }
+
+    // Deine Argumente
+    tafel.append(h('div', { class: 'abschnitt-titel', text: 'Deine Argumente' }));
+    tafel.append(h('ul', { class: 'fakten' }, ...lead.script.usps.map((u) => h('li', { text: u }))));
+
+    // Vorlagen
+    tafel.append(h('div', { class: 'abschnitt-titel', text: 'Vorlagen' }));
+    const kasten = (titel, text) => {
+      tafel.append(h('div', { class: 'kopierzeile' },
+        h('strong', { text: titel }),
+        h('button', { class: 'linkknopf', onClick: () => kopieren(text, titel) }, 'Kopieren')));
+      tafel.append(h('div', { class: 'kopierkasten', text }));
+    };
+    kasten('WhatsApp', lead.whatsapp);
+    kasten('E-Mail – Betreff', lead.email_v.subject);
+    kasten('E-Mail – Text', lead.email_v.body);
+
+    // Technische Analyse
+    tafel.append(h('div', { class: 'abschnitt-titel', text: 'Was die Prüfung fand' }));
+    const dl = h('dl', { class: 'daten' });
+    const zeile = (bezeichnung, wert) => {
+      if (wert == null || wert === '') return;
+      dl.append(h('dt', { text: bezeichnung }), h('dd', { text: String(wert) }));
+    };
+    zeile('Webseite', lead.website || 'keine');
+    zeile('Befund', lead.audit.summary || lead.headline);
+    if (lead.audit.status === 'ok') {
+      zeile('HTTPS', lead.audit.https ? 'ja' : 'nein');
+      zeile('Mobiltauglich', lead.audit.hasViewport ? 'ja' : 'nein');
+      zeile('Ladezeit', lead.audit.responseMs ? (lead.audit.responseMs / 1000).toFixed(1) + ' s' : null);
+      zeile('Copyright', lead.audit.copyrightYear);
+      zeile('Impressum', lead.audit.hasImpressum ? 'ja' : 'nein');
+      zeile('Kontaktformular', lead.audit.hasContactForm ? 'ja' : 'nein');
+      zeile('Technik', (lead.audit.techFlags || []).join(', ') || null);
+    }
+    zeile('Google', lead.googleReviews == null ? 'unbekannt'
+      : lead.googleReviews === 0 ? 'keine Bewertungen' : `${lead.googleRating}★ aus ${lead.googleReviews}`);
+    zeile('Öffnungszeiten', lead.openingHours);
+    tafel.append(dl);
+
+    // Status
+    tafel.append(h('div', { class: 'abschnitt-titel', text: 'Status' }));
+    const statusReihe = h('div', { class: 'gruende' });
+    for (const s of DATEN.statuses) {
+      statusReihe.append(h('button', {
+        class: 'knopf klein',
+        style: z.status === s.id ? { background: s.color, borderColor: s.color, color: '#fff' } : {},
+        onClick: () => {
+          verlauf[lead.id] = { ...zustandVon(lead.id), status: s.id };
+          sichern();
+          melden('Status: ' + s.label);
+          detailZeigen(lead);
+          warteschlangeBauen();
+          if (zustand.ansicht === 'liste') listeZeigen(); else anrufKarteZeigen();
+        },
+      }, s.label));
+    }
+    tafel.append(statusReihe);
+
+    // Verlauf
+    if (z.verlauf?.length) {
+      tafel.append(h('div', { class: 'abschnitt-titel', text: 'Verlauf' }));
+      const v = h('ul', { class: 'fakten' });
+      for (const e of z.verlauf.slice(0, 10)) {
+        const zeitpunkt = new Date(e.zeit).toLocaleString('de-CH', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+        v.append(h('li', { text: `${zeitpunkt} – ${e.text}` }));
+      }
+      tafel.append(v);
+    }
+
+    tafel.scrollTop = 0;
+  }
+
+  // ----------------------------------------------------------------- Info
+
+  function infoZeigen() {
+    const bereich = leeren($('#ansicht-info'));
+
+    bereich.append(
+      h('div', { class: 'anrufkarte' },
+        h('h2', { text: 'Was du hier siehst' }),
+        h('p', { style: { marginTop: '10px', color: 'var(--tinte-2)' } },
+          'Das ist die Oberfläche des Leadradars mit 30 erfundenen Betrieben. Alles ist bedienbar: ' +
+          'durchtelefonieren, Ergebnisse festhalten, filtern, Vorlagen kopieren. Deine Eingaben bleiben ' +
+          'in diesem Browser gespeichert.'),
+        h('p', { style: { marginTop: '10px', color: 'var(--tinte-2)' } },
+          'Was hier fehlt, weil es einen Server braucht: die echte Suche nach Betrieben, die automatische ' +
+          'Webseiten-Prüfung, der Schweiz-Scan und die Karte. Dafür läuft die richtige App auf deinem ' +
+          'Rechner – im Repository unter leadradar/.'),
+      ),
+    );
+
+    bereich.append(h('div', { class: 'abschnitt-titel', text: 'So bedienst du den Anruf-Modus' }));
+    const schritte = [
+      ['Ein Betrieb pro Bildschirm', 'Oben steht, warum er ein Lead ist. Der blaue Knopf wählt die Nummer direkt.'],
+      ['Danach ein Ergebnis tippen', 'Combox, Termin, kein Interesse – die App merkt sich alles und springt weiter.'],
+      ['Die Reihenfolge macht die App', 'Fällige Wiedervorlagen zuerst, dann nach Potenzial. Wer heute schon dran war, kommt erst morgen wieder.'],
+      ['Dreimal Combox?', 'Dann schlägt die App vor, es per WhatsApp oder E-Mail zu versuchen – die Vorlage liegt bereit.'],
+    ];
+    for (const [titel, text] of schritte) {
+      bereich.append(h('div', { class: 'schritt' },
+        h('h4', { text: titel }),
+        h('p', { text })));
+    }
+
+    bereich.append(h('div', { class: 'abschnitt-titel', text: 'Wie der Score entsteht' }));
+    const punkte = [
+      ['Gar keine Webseite', '70'],
+      ['Webseite tot (Domain weg, 404, Timeout)', '66'],
+      ['Nur Platzhalterseite', '60'],
+      ['Nur Facebook oder Instagram', '56'],
+      ['Nur ein local.ch-Eintrag', '52'],
+      ['Webseite mit Mängeln', 'bis 48'],
+      ['Keine Google-Bewertung', '+12'],
+      ['Bewertung unter 3.5★', '+8'],
+      ['Dazu: Erreichbarkeit und Zahlungsfähigkeit', 'bis 30'],
+    ];
+    const dl = h('dl', { class: 'daten' });
+    for (const [was, wert] of punkte) dl.append(h('dt', { text: was }), h('dd', { class: 'tab-nums', text: wert }));
+    bereich.append(dl);
+    bereich.append(h('p', { style: { fontSize: '13px', color: 'var(--tinte-3)', marginTop: '10px' } },
+      'Ein Betrieb ohne Webseite steht immer über einem mit schlechter Webseite – das Gespräch ist eindeutiger zu führen.'));
+
+    bereich.append(h('div', { class: 'abschnitt-titel', text: '⚖️ Rechtliches' }));
+    for (const n of DATEN.legal) {
+      bereich.append(h('div', { class: 'recht-eintrag' },
+        h('h4', { text: n.title }),
+        h('p', { text: n.text })));
+    }
+  }
+
+  function rechtZeigen() {
+    ansichtWechseln('info');
+    setTimeout(() => {
+      document.querySelectorAll('.abschnitt-titel').forEach((el) => {
+        if (el.textContent.includes('Rechtliches')) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }, 80);
+  }
+
+  // ----------------------------------------------------------------- CSV
+
+  async function csvHerunterladen() {
+    const spalten = [
+      ['Firma', (l) => l.name],
+      ['Branche', (l) => l.tradeLabel],
+      ['Telefon', (l) => l.phone],
+      ['E-Mail', (l) => l.email],
+      ['PLZ', (l) => l.address.zip],
+      ['Ort', (l) => l.address.city],
+      ['Webseite', (l) => l.website],
+      ['Problem', (l) => l.headline],
+      ['Score', (l) => l.score],
+      ['Einstufung', (l) => l.tier.label],
+      ['Google Sterne', (l) => l.googleRating ?? ''],
+      ['Google Bewertungen', (l) => l.googleReviews ?? ''],
+      ['Status', (l) => STATUS_NACH_ID.get(zustandVon(l.id).status)?.label || 'Neu'],
+      ['Anrufversuche', (l) => zustandVon(l.id).versuche || 0],
+      ['Wiedervorlage', (l) => zustandVon(l.id).wiedervorlage || ''],
+    ];
+
+    const zelle = (wert) => {
+      const s = wert == null ? '' : String(wert);
+      const sicher = /^[=+\-@\t\r]/.test(s) ? "'" + s : s;
+      return '"' + sicher.replace(/"/g, '""') + '"';
+    };
+
+    const treffer = gefilterteLeads();
+    const csv = '﻿' + [
+      spalten.map(([t]) => zelle(t)).join(';'),
+      ...treffer.map((l) => spalten.map(([, f]) => zelle(f(l))).join(';')),
+    ].join('\r\n');
+
+    if (window.claude?.downloads) {
+      try {
+        await window.claude.downloads.save({
+          filename: `leadradar-demo-${heuteSchluessel()}.csv`,
+          data: csv,
+        });
+        melden(`✓ ${treffer.length} Leads als CSV gespeichert`);
+        return;
+      } catch (fehler) {
+        // Abgelehnt oder nicht verfügbar – unten den Umweg nehmen
+      }
+    }
+    await kopieren(csv, `CSV mit ${treffer.length} Leads`);
+  }
+
+  // ------------------------------------------------------------- Ansichten
+
+  function ansichtWechseln(name) {
+    zustand.ansicht = name;
+    for (const knopf of document.querySelectorAll('.reiter button')) {
+      knopf.classList.toggle('an', knopf.dataset.ansicht === name);
+    }
+    for (const id of ['anrufen', 'liste', 'info']) {
+      $('#ansicht-' + id).hidden = id !== name;
+    }
+    if (name === 'anrufen') { warteschlangeBauen(); anrufKarteZeigen(); }
+    if (name === 'liste') listeZeigen();
+    if (name === 'info') infoZeigen();
+  }
+
+  // ----------------------------------------------------------------- Start
+
+  function branchenFuellen(select, alleText) {
+    leeren(select).append(h('option', { value: 'alle' }, alleText));
+    const vorhanden = new Set(DATEN.leads.map((l) => l.trade));
+    for (const gruppe of DATEN.gruppen) {
+      const branchen = DATEN.trades.filter((t) => t.gruppe === gruppe.id && vorhanden.has(t.id));
+      if (!branchen.length) continue;
+      const optgroup = h('optgroup', { label: gruppe.label });
+      for (const t of branchen) optgroup.append(h('option', { value: t.id }, `${t.emoji} ${t.label}`));
+      select.append(optgroup);
+    }
+  }
+
+  branchenFuellen($('#qBranche'), 'Alle Branchen');
+  branchenFuellen($('#fBranche'), 'Alle Branchen');
+  for (const s of DATEN.statuses) $('#fStatus').append(h('option', { value: s.id }, s.label));
+  $('#fussTelefon').textContent = DATEN.agentur.phone;
+
+  document.querySelector('.reiter').addEventListener('click', (e) => {
+    const knopf = e.target.closest('button');
+    if (knopf) ansichtWechseln(knopf.dataset.ansicht);
+  });
+
+  for (const id of ['#qBranche', '#qScore']) {
+    $(id).addEventListener('change', () => { warteschlangeBauen(); anrufKarteZeigen(); });
+  }
+  for (const id of ['#fBranche', '#fWebseite', '#fBewertungen', '#fSterne', '#fStatus']) {
+    $(id).addEventListener('change', listeZeigen);
+  }
+  let sucheUhr;
+  $('#fSuche').addEventListener('input', () => {
+    clearTimeout(sucheUhr);
+    sucheUhr = setTimeout(listeZeigen, 200);
+  });
+
+  $('#csvKnopf').addEventListener('click', csvHerunterladen);
+  $('#rechtKnopf').addEventListener('click', rechtZeigen);
+  $('#zuruecksetzen').addEventListener('click', () => {
+    if (!confirm('Alle Anrufergebnisse dieser Demo löschen?')) return;
+    verlauf = {};
+    sichern();
+    melden('Demo zurückgesetzt');
+    ansichtWechseln('anrufen');
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && $('#tafelBereich').firstChild) {
+      leeren($('#tafelBereich'));
+      document.body.style.overflow = '';
+      return;
+    }
+    if (zustand.ansicht !== 'anrufen') return;
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    const ziffer = Number(e.key);
+    if (ziffer >= 1 && ziffer <= 9) {
+      const knoepfe = document.querySelectorAll('.ergebnis');
+      if (knoepfe[ziffer - 1]) { e.preventDefault(); knoepfe[ziffer - 1].click(); }
+    }
+    if (e.key === 'ArrowRight' || e.key === 's') { e.preventDefault(); naechster(); }
+  });
+
+  ansichtWechseln('anrufen');
+})();
+</script>

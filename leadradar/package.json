@@ -8,7 +8,8 @@
     "start": "node server.js",
     "handy": "node start-handy.js",
     "dev": "node --watch server.js",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "demo-seite": "node tools/demo-seite-bauen.js"
   },
   "engines": {
     "node": ">=20.0.0"

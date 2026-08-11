@@ -9,3 +9,6 @@ data/*.kaputt-*
 node_modules/
 *.log
 .DS_Store
+
+# Erzeugte Demo-Seite
+leadradar-demo.html

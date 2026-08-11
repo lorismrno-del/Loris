@@ -43,7 +43,20 @@ starten. Das funktioniert sofort und ohne Internet.
 ## 📱 Auf dem Handy nutzen
 
 So gestartet läuft die App **nur auf deinem Rechner**. Vom Handy kommst du da
-nicht drauf. Es gibt zwei Wege.
+nicht drauf. Es gibt drei Wege – der erste ist in einer Minute erledigt.
+
+### Weg 0: Die Demo-Seite (zum Herzeigen)
+
+```bash
+npm run demo-seite
+```
+
+Baut eine einzelne HTML-Datei mit den 30 Demo-Betrieben. Die kannst du
+verschicken, auf den Desktop legen oder auf dem Handy öffnen – sie braucht
+keinen Server und kein Internet. Anrufergebnisse werden im Browser gespeichert.
+
+Was fehlt: die echte Suche, die Webseiten-Prüfung, der Schweiz-Scan und die
+Karte. Dafür braucht es den Server – also Weg 1 oder 2.
 
 ### Weg 1: Gleiches WLAN (2 Minuten, gratis)
 
