@@ -38,6 +38,11 @@ async function api(path, options) {
     body: options?.body ? JSON.stringify(options.body) : undefined,
   });
   const data = await res.json().catch(() => ({}));
+  if (res.status === 401 && data.login) {
+    // Sitzung abgelaufen - zurück zur Anmeldung
+    location.href = '/login.html';
+    throw new Error('Nicht angemeldet');
+  }
   if (!res.ok) throw new Error(data.error || `Fehler ${res.status}`);
   return data;
 }
@@ -766,6 +771,18 @@ function showLegal() {
 async function init() {
   state.meta = await api('/api/meta');
   fillSettings(state.meta.settings);
+
+  // Abmelden-Knopf nur zeigen, wenn ein Passwort gesetzt ist
+  if (state.meta.schutzAktiv) {
+    $('.topbar-right').append(h('button', {
+      class: 'btn btn-ghost btn-sm',
+      title: 'Abmelden',
+      onClick: async () => {
+        await fetch('/api/logout', { method: 'POST' });
+        location.href = '/login.html';
+      },
+    }, '⏻'));
+  }
 
   // Branchen
   for (const t of HANDWERK) state.selectedTrades.add(t);

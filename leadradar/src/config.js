@@ -43,8 +43,14 @@ const bool = (v, fallback) => {
 
 export const config = {
   port: num(process.env.PORT, 3000),
+  // 0.0.0.0 = auch vom Handy im gleichen WLAN erreichbar.
+  // Dann bitte unbedingt APP_PASSWORD setzen.
   host: process.env.HOST || '127.0.0.1',
   dataDir: process.env.DATA_DIR || path.join(ROOT, 'data'),
+
+  auth: {
+    password: process.env.APP_PASSWORD || '',
+  },
 
   // Agentur-Stammdaten (für Anrufskript, E-Mail-Vorlagen, WhatsApp)
   agency: {

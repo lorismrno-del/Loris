@@ -40,6 +40,98 @@ starten. Das funktioniert sofort und ohne Internet.
 
 ---
 
+## 📱 Auf dem Handy nutzen
+
+So gestartet läuft die App **nur auf deinem Rechner**. Vom Handy kommst du da
+nicht drauf. Es gibt zwei Wege.
+
+### Weg 1: Gleiches WLAN (2 Minuten, gratis)
+
+Der schnellste Weg. Bedingung: Rechner läuft und Handy ist im selben WLAN.
+
+**1.** Passwort festlegen. Datei `.env` anlegen (Vorlage: `.env.example`) und
+eintragen:
+
+```
+APP_PASSWORD=deinPasswort
+```
+
+Das ist Pflicht – ohne Passwort könnte jeder im WLAN deine Leads lesen.
+Das Skript startet sonst gar nicht erst.
+
+**2.** So starten:
+
+```bash
+npm run handy
+```
+
+**3.** Im Terminal steht jetzt die Adresse fürs Handy:
+
+```
+📱 Auf dem Handy (gleiches WLAN) – diese Adresse eintippen:
+    http://192.168.1.42:3000
+```
+
+Diese Adresse im Handy-Browser eingeben, Passwort eintippen – fertig.
+
+**4.** Als App-Icon speichern:
+- **iPhone:** Safari → Teilen-Symbol → *Zum Home-Bildschirm*
+- **Android:** Chrome → Menü (⋮) → *App installieren*
+
+Danach startet Leadradar wie eine normale App, ohne Browserleiste.
+
+> Die IP-Adresse kann sich ändern, wenn der Router neu startet. Steht dann
+> einfach wieder im Terminal.
+
+**Grenze dieses Wegs:** Sobald du das WLAN verlässt – also genau dann, wenn du
+unterwegs anrufen willst – funktioniert es nicht mehr. Dafür Weg 2.
+
+### Weg 2: Online stellen (überall erreichbar)
+
+Damit läuft die App auf einem Server und ist von überall erreichbar – auch
+unterwegs, auch wenn dein Rechner aus ist.
+
+Es braucht einen Anbieter, der Node.js ausführt. Gut geeignet und mit
+Gratis-Kontingent: **[Render](https://render.com)**, **[Railway](https://railway.app)**
+oder **[Fly.io](https://fly.io)**.
+
+Bei Render zum Beispiel:
+
+1. Neuer *Web Service* → dieses Repository verbinden
+2. **Root Directory:** `leadradar`
+3. **Build Command:** leer lassen (keine Abhängigkeiten)
+4. **Start Command:** `node server.js`
+5. Unter *Environment* eintragen:
+   - `APP_PASSWORD` = dein Passwort
+   - `HOST` = `0.0.0.0`
+   - `GOOGLE_PLACES_API_KEY` = dein Key (falls vorhanden)
+
+Du bekommst eine feste Adresse wie `https://leadradar.onrender.com`. Die aufs
+Handy legen wie oben. Über HTTPS läuft dann auch das Anmelde-Cookie abgesichert.
+
+**Zwei Dinge, die du wissen solltest:**
+
+- **Die Daten liegen im `data`-Ordner.** Viele Hoster löschen den bei jedem
+  Neustart. Bei Render heisst die Lösung *Persistent Disk*, gemountet auf
+  `/opt/render/project/src/leadradar/data`. Ohne das sind deine Leads nach dem
+  nächsten Deploy weg.
+- **Gratis-Pläne schlafen ein.** Der erste Aufruf nach einer Pause dauert dann
+  30–60 Sekunden.
+
+### Wenn du nur schnell mal draufschauen willst
+
+Für einen kurzen Test ohne Hosting geht auch ein Tunnel, der deinen laufenden
+Rechner vorübergehend ins Internet stellt:
+
+```bash
+npx localtunnel --port 3000
+```
+
+Gibt eine öffentliche Adresse für die Dauer der Sitzung. **Nur mit gesetztem
+`APP_PASSWORD` benutzen** – die Adresse ist für jeden erreichbar, der sie kennt.
+
+---
+
 ## Datenquellen
 
 | Quelle | Key nötig | Abdeckung | Bemerkung |
@@ -160,13 +252,24 @@ Alternativ: **„{ } JSON kopieren"** im Detail, oder der CSV-Export oben rechts
 
 ## Wo liegen meine Daten?
 
-Alles bleibt lokal in `data/`:
+Alles bleibt in `data/`:
 
 - `data/leads.json` – deine Leads inkl. Status, Notizen, Verlauf
 - `data/settings.json` – dein Profil und deine Argumente
 
 Nichts geht an Dritte. Für ein Backup einfach den `data`-Ordner kopieren.
 Beide Dateien stehen in `.gitignore` – sie landen nie im Repository.
+
+## Passwortschutz
+
+Ist `APP_PASSWORD` gesetzt, verlangt die App beim ersten Aufruf ein Passwort
+und merkt sich die Anmeldung 30 Tage lang – auf dem Handy musst du also nicht
+täglich neu eintippen. Abmelden über das ⏻-Symbol oben rechts.
+
+Technisch: signiertes HttpOnly-Cookie (HMAC-SHA256 mit dem Passwort als
+Schlüssel), Passwortvergleich ohne Zeitunterschied, und nach 10 Fehlversuchen
+pro IP ist 15 Minuten Pause. Ohne gesetztes Passwort ist der Schutz aus – dann
+sollte die App aber auch nur auf `127.0.0.1` laufen.
 
 ---
 

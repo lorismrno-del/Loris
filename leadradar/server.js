@@ -7,6 +7,7 @@
 import http from 'node:http';
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -23,6 +24,10 @@ import { leadsToCsv } from './src/csv.js';
 import * as store from './src/store.js';
 import { loadSettings, saveSettings, getSettings, DEFAULT_SETTINGS } from './src/settings.js';
 import { pushToWebhooks, toPayload } from './src/webhooks.js';
+import {
+  schutzAktiv, istAngemeldet, passwortStimmt, erstelleToken,
+  setzeCookie, loescheCookie, zuVieleVersuche, versuchZaehlen,
+} from './src/auth.js';
 import { createJob, getJob, setStep, finishJob, failJob } from './src/jobs.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -249,11 +254,41 @@ async function handleApi(req, res, url) {
   const { pathname } = url;
   const method = req.method;
 
+  // ---- Anmeldung
+  if (pathname === '/api/login' && method === 'POST') {
+    if (!schutzAktiv()) return json(res, 200, { ok: true, hinweis: 'Kein Passwort gesetzt' });
+
+    const ip = clientIp(req);
+    if (zuVieleVersuche(ip)) {
+      return json(res, 429, { error: 'Zu viele Fehlversuche. Bitte 15 Minuten warten.' });
+    }
+
+    const { password } = await readBody(req);
+    const richtig = passwortStimmt(password);
+    versuchZaehlen(ip, richtig);
+
+    if (!richtig) return json(res, 401, { error: 'Passwort stimmt nicht.' });
+
+    setzeCookie(res, erstelleToken(), istHttps(req));
+    return json(res, 200, { ok: true });
+  }
+
+  if (pathname === '/api/logout' && method === 'POST') {
+    loescheCookie(res);
+    return json(res, 200, { ok: true });
+  }
+
+  // Ab hier: alles geschützt
+  if (!istAngemeldet(req)) {
+    return json(res, 401, { error: 'Nicht angemeldet', login: true });
+  }
+
   // ---- Stammdaten fürs UI
   if (pathname === '/api/meta' && method === 'GET') {
     return json(res, 200, {
       agency: config.agency,
       settings: getSettings(),
+      schutzAktiv: schutzAktiv(),
       trades: TRADES,
       statuses: store.STATUSES,
       places: listPlaces(),
@@ -478,12 +513,33 @@ async function handleApi(req, res, url) {
 
 // ----------------------------------------------------------------------- Start
 
+/** Dateien, die auch ohne Anmeldung ausgeliefert werden (Login-Seite + Zubehör). */
+const OEFFENTLICH = new Set([
+  '/login.html', '/styles.css', '/manifest.webmanifest',
+  '/icons/icon-192.png', '/icons/icon-512.png', '/icons/apple-touch-icon.png',
+]);
+
+function clientIp(req) {
+  return req.socket?.remoteAddress || 'unbekannt';
+}
+
+/** Läuft die Verbindung über HTTPS? Wichtig fürs Secure-Cookie hinter einem Proxy. */
+function istHttps(req) {
+  return (
+    req.socket?.encrypted === true ||
+    String(req.headers['x-forwarded-proto'] || '').split(',')[0].trim() === 'https'
+  );
+}
+
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
 
   try {
     if (url.pathname.startsWith('/api/')) {
       await handleApi(req, res, url);
+    } else if (schutzAktiv() && !istAngemeldet(req) && !OEFFENTLICH.has(url.pathname)) {
+      // Nicht angemeldet: Login-Seite ausliefern, egal welche Adresse aufgerufen wurde
+      await serveStatic(res, '/login.html');
     } else {
       await serveStatic(res, url.pathname);
     }
@@ -497,17 +553,57 @@ const server = http.createServer(async (req, res) => {
 await loadSettings();
 await store.load();
 
+/** Alle IPv4-Adressen dieses Rechners im lokalen Netz (für den Handy-Zugriff). */
+function netzwerkAdressen() {
+  const gefunden = [];
+  for (const eintraege of Object.values(os.networkInterfaces())) {
+    for (const e of eintraege || []) {
+      if (e.family === 'IPv4' && !e.internal) gefunden.push(e.address);
+    }
+  }
+  return gefunden;
+}
+
 server.listen(config.port, config.host, () => {
-  const url = `http://${config.host}:${config.port}`;
   const n = store.allLeads().length;
+  const oeffentlich = config.host === '0.0.0.0' || config.host === '::';
+
   console.log('');
   console.log('  ╭──────────────────────────────────────────────╮');
   console.log('  │   Lorino Leadradar läuft                     │');
   console.log('  ╰──────────────────────────────────────────────╯');
-  console.log(`  →  ${url}`);
-  console.log(`  →  Gespeicherte Leads: ${n}`);
-  console.log(`  →  Datenordner: ${config.dataDir}`);
-  console.log(`  →  Google Places: ${hasGoogle() ? 'aktiv' : 'nicht konfiguriert (OpenStreetMap wird genutzt)'}`);
+  console.log(`  Auf diesem Rechner:  http://127.0.0.1:${config.port}`);
+
+  if (oeffentlich) {
+    const adressen = netzwerkAdressen();
+    if (adressen.length) {
+      console.log('');
+      console.log('  📱 Auf dem Handy (gleiches WLAN) – diese Adresse eintippen:');
+      for (const ip of adressen) console.log(`      http://${ip}:${config.port}`);
+    } else {
+      console.log('  ⚠️  Keine Netzwerkadresse gefunden – ist der Rechner im WLAN?');
+    }
+  } else {
+    console.log('');
+    console.log('  ℹ️  Nur auf diesem Rechner erreichbar.');
+    console.log('      Für den Zugriff vom Handy: APP_PASSWORD in die .env');
+    console.log('      eintragen und dann starten mit   npm run handy');
+  }
+
+  console.log('');
+  console.log(`  Passwortschutz:  ${schutzAktiv() ? 'aktiv ✓' : 'AUS'}`);
+  console.log(`  Gespeicherte Leads:  ${n}`);
+  console.log(`  Google Places:  ${hasGoogle() ? 'aktiv' : 'nicht konfiguriert (OpenStreetMap wird genutzt)'}`);
+
+  if (oeffentlich && !schutzAktiv()) {
+    console.log('');
+    console.log('  ╭──────────────────────────────────────────────────────────╮');
+    console.log('  │  ⚠️  WARNUNG: kein Passwort gesetzt!                      │');
+    console.log('  │  Jeder im gleichen WLAN sieht deine Leads und Notizen.   │');
+    console.log('  │  Beenden und mit APP_PASSWORD=… neu starten.             │');
+    console.log('  ╰──────────────────────────────────────────────────────────╯');
+  }
+
   console.log('');
   console.log('  Beenden mit Strg + C');
   console.log('');
