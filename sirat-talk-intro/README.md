@@ -61,15 +61,33 @@ Timeline steckt in den Keyframe-Prozenten, damit nichts auseinanderläuft.
 
 | Zeit | Was passiert |
 |---|---|
-| 0,0 – 1,5 s | Wellenlinie, Strich, Punkt, Kreisumriss, Kreuz tauchen nacheinander auf, je 0,15 s Versatz, blur 10px → 0, Scale 1,4 → 1, `cubic-bezier(.16,1,.3,1)` |
-| 1,5 – 3,0 s | Elemente driften langsam Richtung Mitte, leichte Rotation, Restunschärfe; Kamera zoomt 1,0 → 1,06 |
-| 3,0 – 5,0 s | Der Weg zeichnet sich als weiße S-Kurve von unten links nach oben (`stroke-dasharray`, ease-in-out), Strichstärke 6px → 16px; die Elemente ordnen sich links und rechts am Weg an |
-| 5,0 – 5,4 s | Der Weg schießt in die Bildmitte zusammen, weißer Flash (0 → 1 → 0 in 0,35 s), Hintergrund wechselt auf Weiß |
-| 5,4 – 6,6 s | Logoaufbau: die rote Blase wächst mit Overshoot aus dem Weg heraus (Scale 0,6 → 1), „SIRAT" wird per `clip-path` von links nach rechts freigelegt (0,4 s), „TALK" fährt 0,15 s später 30px von links ein; gleichzeitig fliegen die kleinen Elemente in Rot nach außen und blenden aus |
+| 0,00 s | Das Bild startet **leer**. Kein Element ist vorher da. |
+| 0,16 – 1,72 s | Neun Elemente (Wellenlinie, Strich, Punkt, Kreisumriss, Kreuz, in zwei Größen) tauchen nacheinander auf, je 0,13 s Versatz. Deckkraft echt von 0 auf 100, dazu blur 10px → 0 und Scale 1,4 → 1, `cubic-bezier(.16,1,.3,1)` |
+| 1,5 – 3,0 s | Die Elemente driften Richtung Mitte. Jedes läuft auf einer eigenen Bahn und **dreht sich dabei automatisch in seine Bewegungsrichtung** (`offset-rotate: auto`). Kamera zoomt 1,0 → 1,06 |
+| 3,0 – 4,75 s | Der Weg zeichnet sich als weiße S-Kurve von unten links nach oben (`stroke-dasharray`, ease-in-out), 6px → 16px. Ein **Strich reitet auf der Linienspitze** und führt sie; die übrigen Elemente ordnen sich links und rechts am Weg an |
+| 4,75 – 5,25 s | Der Strich legt sich per `d`-Morph **genau auf den Weg im Logo**. Quelle und Ziel haben denselben Aufbau (M + 3 C), also interpoliert die Kurve Punkt für Punkt. Der Leitstrich landet am Anfang dieses Wegs |
+| 5,16 – 5,48 s | Weißer Flash (0 → 1 → 0), Hintergrund schaltet im Scheitel hart auf Weiß |
+| 5,40 – 6,40 s | Logoaufbau: die rote Blase wächst mit Overshoot **aus genau diesem Weg** heraus (Scale 0,6 → 1) — die weiße Aussparung der Blase ist der gelandete Strich. „SIRAT" wird per `clip-path` von links nach rechts freigelegt (0,4 s), „TALK" fährt 0,15 s später 30px von links ein |
+| 5,42 – 6,55 s | Die kleinen Elemente fliegen in Rot durch die Mitte nach außen und blenden aus — versetzt, jedes auf seiner Bahn weiter, ohne Richtungsknick |
 | 6,6 – 8,0 s | Nachfedern Scale 1,02 → 1,0, letzte 0,5 s ruhig |
 
 Hintergrund startet auf `#2B0507` und wechselt im Flash-Peak hart auf Weiß –
 so entsteht kein Verlauf durch Zwischenfarben.
+
+### Wie die Elemente bewegt werden
+
+Jedes Element steckt in drei ineinander liegenden Gruppen, damit jede Ebene ihr
+eigenes Easing bekommt:
+
+| Ebene | Aufgabe |
+|---|---|
+| `.eo` | Deckkraft und Farbe — der echte Übergang von 0 auf 100 |
+| `.ep` | die Reise: `offset-path` mit der eigenen Bahn des Elements, `offset-distance` animiert, `offset-rotate: auto` dreht in Bewegungsrichtung |
+| `.es` | Auftauch-Scale und Bewegungsunschärfe |
+
+Die Bahnen sind zentripetale Catmull-Rom-Splines durch Start → Drift → Position
+am Weg → Mitte → Ausgang. Weil jedes Element **durch** die Mitte fliegt statt
+dort umzukehren, gibt es beim Rausgehen keinen Richtungsknick.
 
 ## Logo
 
@@ -79,7 +97,18 @@ Das Logo ist **unverändert**. Es wurde aus der Vorlage in Pfade übernommen
 Logo bis auf Kantenglättung (< 0,01 % abweichende Pixel).
 
 Der weiße Weg im Logo ist die Blasenspitze – im Intro ist er das Leitmotiv:
-er wird gezeichnet, kollabiert zur Mitte, und die Blase wächst genau aus ihm heraus.
+er wird gezeichnet, legt sich per Morph exakt auf den Weg im Logo, und die Blase
+wächst genau aus ihm heraus. Die Ziel-Kurve wurde aus der Weg-Fläche im Logo
+gemessen (Mittellinie), nicht geschätzt: mittlere Abweichung 1,8px bei 1024px
+Vorlagenbreite, 595 von 600 Kurvenpunkten liegen innerhalb der Weg-Fläche.
+
+### Browser
+
+Die Datei nutzt zwei neuere CSS-Bausteine: `offset-path` / `offset-rotate`
+(Motion Path) für die Bahnen und die Animation der `d`-Eigenschaft für den
+Übergang vom Strich zum Weg im Logo. Beides trägt in Chromium und Firefox;
+gerendert wird ohnehin mit Chromium. In älteren Browsern springt der Morph
+statt zu interpolieren — der Flash deckt die Stelle ab.
 
 ## Farben
 
