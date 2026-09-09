@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Werkstattquiz: Bremsen, Schmierstoffe, Kühlmittel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:light dark;
+  --beton:#ECEDE9; --karte:#FFFFFF; --tinte:#141716; --tinte-weich:#4F5654;
+  --petrol:#0F3D3E; --amber:#E3A21A; --gruen:#1B6E3D; --rot:#A82F1B;
+  --linie:#C9CDC7; --radius:6px;
+  --topbar-bg:#0F3D3E; --topbar-text:#FFFFFF; --topbar-sub:#A9C6C4; --balken-bg:#0A2C2D;
+  --wahl:#EAF2F1; --okbg:#EAF5EE; --neinbg:#FBEEEB; --spur:#D5D9D3; --merk:#FBF3E1;
+  --knopf-bg:#0F3D3E; --knopf-text:#FFFFFF; --knopf-aus:#AAB1AE; --hinweis:#8A6207;
+}
+:root[data-theme=dark],
+:root:not([data-theme=light]) {}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme=light]){
+    --beton:#14181A; --karte:#1E2426; --tinte:#F2F4F2; --tinte-weich:#B3BCBA;
+    --petrol:#4FA79C; --amber:#F2BC4E; --gruen:#5BC585; --rot:#F2836C;
+    --linie:#39413F;
+    --topbar-bg:#0E1415; --topbar-text:#F2F4F2; --topbar-sub:#93A6A4; --balken-bg:#2A3331;
+    --wahl:#233332; --okbg:#1A3326; --neinbg:#3A211C; --spur:#333B39; --merk:#2E2A1D;
+    --knopf-bg:#2E7D74; --knopf-text:#FFFFFF; --knopf-aus:#454D4B; --hinweis:#F2BC4E;
+  }
+}
+:root[data-theme=dark]{
+  --beton:#14181A; --karte:#1E2426; --tinte:#F2F4F2; --tinte-weich:#B3BCBA;
+  --petrol:#4FA79C; --amber:#F2BC4E; --gruen:#5BC585; --rot:#F2836C;
+  --linie:#39413F;
+  --topbar-bg:#0E1415; --topbar-text:#F2F4F2; --topbar-sub:#93A6A4; --balken-bg:#2A3331;
+  --wahl:#233332; --okbg:#1A3326; --neinbg:#3A211C; --spur:#333B39; --merk:#2E2A1D;
+  --knopf-bg:#2E7D74; --knopf-text:#FFFFFF; --knopf-aus:#454D4B; --hinweis:#F2BC4E;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:var(--beton)}
+body{color:var(--tinte);font-family:'Barlow',system-ui,sans-serif;font-size:18px;line-height:1.55}
+.wrap{max-width:560px;margin:0 auto;padding:0 16px}
+h1,h2,h3,.kondens{font-family:'Barlow Condensed','Barlow Semi Condensed','Barlow',sans-serif}
+button{font-family:inherit;font-size:inherit;cursor:pointer;color:var(--tinte)}
+:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+
+.topbar{position:sticky;top:0;z-index:10;background:var(--topbar-bg);color:var(--topbar-text)}
+.topbar .wrap{display:flex;align-items:center;gap:12px;height:54px}
+.topbar .zaehler{font-family:'Barlow Condensed';font-size:21px;font-weight:700;color:var(--topbar-text)}
+.topbar .kat{font-size:15px;color:var(--topbar-sub);flex:1;text-align:right}
+.topbar .zurueck{background:none;border:0;color:var(--topbar-sub);padding:6px 0;font-size:16px}
+.balken{height:4px;background:var(--balken-bg)}
+.balken i{display:block;height:100%;background:var(--amber);width:0;transition:width .25s ease}
+
+.hero{padding:30px 0 6px}
+.hero .marke{font-size:15px;color:var(--tinte-weich);margin:0 0 6px}
+.hero h1{font-size:40px;line-height:1.04;margin:0;font-weight:700;color:var(--tinte)}
+.hero p.lead{margin:14px 0 0;max-width:46ch;color:var(--tinte-weich)}
+.feld{margin-top:24px}
+.feld > label,.feld .titel{display:block;font-weight:600;margin-bottom:8px;color:var(--tinte)}
+input[type=text]{width:100%;padding:14px;border:1.5px solid var(--linie);border-radius:var(--radius);background:var(--karte);font-family:inherit;font-size:18px;color:var(--tinte)}
+input[type=text]::placeholder{color:var(--tinte-weich);opacity:.8}
+input[type=text]:focus{border-color:var(--petrol);outline:none}
+.tausch{display:flex;border:1.5px solid var(--linie);border-radius:var(--radius);overflow:hidden;background:var(--karte)}
+.tausch button{flex:1;border:0;background:transparent;padding:13px 6px;color:var(--tinte-weich);font-weight:600}
+.tausch button[aria-pressed=true]{background:var(--knopf-bg);color:var(--knopf-text)}
+.hinweis{font-size:15px;color:var(--tinte-weich);margin:8px 0 0}
+.katliste{display:grid;gap:8px}
+.katbox{display:flex;align-items:center;gap:12px;background:var(--karte);border:1.5px solid var(--linie);border-radius:var(--radius);padding:13px 14px;width:100%;font-size:18px}
+.katbox[data-an=true]{border-color:var(--petrol)}
+.katbox .kasten{width:22px;height:22px;border:1.5px solid var(--linie);border-radius:4px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--knopf-text);font-size:15px}
+.katbox[data-an=true] .kasten{background:var(--knopf-bg);border-color:var(--knopf-bg)}
+.katbox .nam{flex:1;text-align:left;font-weight:500;color:var(--tinte)}
+.katbox .anz{color:var(--tinte-weich);font-size:15px}
+
+.frageblock{padding:22px 0 150px}
+.frage{font-size:28px;line-height:1.2;font-weight:700;margin:0;color:var(--tinte)}
+.mehrfach{font-size:16px;color:var(--hinweis);font-weight:600;margin:10px 0 0}
+.optionen{margin-top:18px;display:grid;gap:9px}
+.opt{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;background:var(--karte);border:1.5px solid var(--linie);border-radius:var(--radius);padding:14px;color:var(--tinte);line-height:1.4;font-size:18px}
+.opt .kugel{width:25px;height:25px;flex:none;border-radius:50%;border:1.5px solid var(--linie);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:var(--tinte-weich)}
+.opt[data-gewaehlt=true]{border-color:var(--petrol);background:var(--wahl)}
+.opt[data-gewaehlt=true] .kugel{background:var(--petrol);border-color:var(--petrol);color:var(--karte)}
+.opt[data-status=richtig]{border-color:var(--gruen);background:var(--okbg)}
+.opt[data-status=richtig] .kugel{background:var(--gruen);border-color:var(--gruen);color:var(--karte)}
+.opt[data-status=falsch]{border-color:var(--rot);background:var(--neinbg)}
+.opt[data-status=falsch] .kugel{background:var(--rot);border-color:var(--rot);color:var(--karte)}
+.opt[disabled]{opacity:1;cursor:default}
+.erklaerung{margin-top:16px;background:var(--karte);border-left:4px solid var(--amber);border-radius:0 var(--radius) var(--radius) 0;padding:14px 15px;font-size:17px;color:var(--tinte)}
+.erklaerung b{display:block;margin-bottom:3px}
+.erklaerung .funk{display:block;margin-top:8px;color:var(--tinte-weich)}
+
+.fuss{position:fixed;bottom:0;left:0;right:0;background:var(--beton);border-top:1px solid var(--linie);padding:13px 0 calc(15px + env(safe-area-inset-bottom))}
+.knopf{width:100%;border:0;border-radius:var(--radius);background:var(--knopf-bg);color:var(--knopf-text);padding:16px;font-weight:600;font-size:18px}
+.knopf[disabled]{background:var(--knopf-aus);color:var(--beton)}
+.knopf.zweit{background:transparent;color:var(--petrol);border:1.5px solid var(--petrol);margin-top:9px;padding:13px}
+
+.resultkopf{padding:28px 0 6px;text-align:center}
+.punkte{font-family:'Barlow Condensed';font-size:74px;line-height:.9;font-weight:700;color:var(--petrol)}
+.punkte span{font-size:30px;color:var(--tinte-weich)}
+.prozent{font-size:20px;font-weight:600;margin-top:6px}
+.urteil{color:var(--tinte-weich);margin-top:4px}
+.note{display:inline-block;margin-top:14px;background:var(--karte);border:1.5px solid var(--linie);border-radius:var(--radius);padding:8px 16px;font-weight:600}
+.katstat{margin-top:26px;display:grid;gap:14px}
+.katstat .zeile{display:flex;justify-content:space-between;font-size:16px;margin-bottom:5px}
+.spur{height:8px;background:var(--spur);border-radius:4px;overflow:hidden}
+.spur i{display:block;height:100%;background:var(--petrol)}
+.abschnitt{margin-top:32px}
+.abschnitt h3{font-size:25px;margin:0 0 4px;font-weight:700;color:var(--tinte)}
+.abschnitt p.sub{margin:0 0 12px;color:var(--tinte-weich);font-size:16px}
+.karte-falsch{background:var(--karte);border:1.5px solid var(--linie);border-left:4px solid var(--rot);border-radius:0 var(--radius) var(--radius) 0;padding:15px;margin-bottom:10px}
+.karte-falsch .nr{font-size:15px;color:var(--tinte-weich);margin-bottom:3px}
+.karte-falsch .fr{font-weight:600;line-height:1.3;margin-bottom:10px;font-size:19px}
+.zl{margin-bottom:10px;font-size:17px}
+.zl:last-child{margin-bottom:0}
+.lb{display:block;font-size:14px;color:var(--tinte-weich)}
+.falschtext{color:var(--rot)}
+.richtigtext{color:var(--gruen)}
+.erkl{color:var(--tinte-weich)}
+.eintrag{background:var(--karte);border:1.5px solid var(--linie);border-radius:var(--radius);overflow:hidden;margin-bottom:8px}
+.eintrag > button{width:100%;display:flex;gap:11px;align-items:flex-start;background:none;border:0;padding:13px 14px;text-align:left;color:var(--tinte);line-height:1.35;font-size:17px}
+.zeichen{width:22px;height:22px;flex:none;border-radius:50%;color:var(--karte);font-size:14px;display:flex;align-items:center;justify-content:center;font-weight:700}
+.zeichen.j{background:var(--gruen)}
+.zeichen.n{background:var(--rot)}
+.detail{padding:0 14px 14px 47px;display:none}
+.eintrag[data-offen=true] .detail{display:block}
+.leer{color:var(--tinte-weich);padding:6px 0 0}
+
+.blatt{padding:22px 0 150px}
+.blatt h2{font-size:33px;margin:0 0 6px;font-weight:700;color:var(--tinte)}
+.blatt > p{color:var(--tinte-weich);margin:0 0 20px}
+.kapitel{background:var(--karte);border:1.5px solid var(--linie);border-radius:var(--radius);margin-bottom:9px;overflow:hidden}
+.kapitel > button{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;background:none;border:0;padding:15px 14px;text-align:left;font-weight:600;font-size:19px;color:var(--tinte)}
+.kapitel > button .pfeil{color:var(--amber);font-size:22px;flex:none}
+.kapitel .inhalt{display:none;padding:0 14px 16px;color:var(--tinte)}
+.kapitel[data-offen=true] .inhalt{display:block}
+.kapitel h4{margin:16px 0 4px;font-size:18px;font-family:'Barlow';font-weight:600}
+.kapitel h4:first-child{margin-top:0}
+.kapitel ul{margin:0;padding-left:20px}
+.kapitel li{margin-bottom:5px}
+.kapitel p{margin:6px 0 0;color:var(--tinte-weich)}
+.merk{background:var(--merk);border-radius:var(--radius);padding:12px 13px;margin-top:12px;font-size:17px;color:var(--tinte)}
+.toast{position:fixed;left:16px;right:16px;bottom:calc(100px + env(safe-area-inset-bottom));max-width:528px;margin:0 auto;background:var(--knopf-bg);color:var(--knopf-text);padding:14px 16px;border-radius:var(--radius);text-align:center;z-index:30}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* w = kurze Erklärung, was das Bauteil oder der Stoff überhaupt macht */
+const FRAGEN=[
+/* ================= BREMSANLAGE: GRUNDLAGEN ================= */
+{k:"Bremsanlage",t:"single",f:"Was passiert beim Bremsen mit der Bewegungsenergie des Fahrzeugs?",o:["Sie wird durch Reibung in Wärme umgewandelt","Sie wird in der Batterie gespeichert","Sie wird in Druck umgewandelt und bleibt im System","Sie verschwindet einfach"],r:[0],e:"Belag und Scheibe reiben aufeinander, die Energie wird zu Wärme und geht an die Luft.",w:"Eine Bremse ist im Grunde ein Wandler: sie macht aus Fahrt Wärme. Darum wird sie heiss und darum braucht sie Kühlung."},
+{k:"Bremsanlage",t:"multi",f:"Ein Fahrzeug hat vier Bremsarten. Welche gehören dazu?",o:["Betriebsbremse","Hilfsbremse","Feststellbremse","Dauerbremse","Notbremse mit Anker","Handbremse am Anhängerhaken"],r:[0,1,2,3],e:"Betriebsbremse zum normalen Bremsen, Hilfsbremse bei Ausfall, Feststellbremse zum Sichern im Stand, Dauerbremse für lange Gefälle.",w:"Die Hilfsbremse ist meist der zweite Bremskreis oder die Feststellbremse. Die Dauerbremse ist Motorbremse oder Retarder."},
+{k:"Bremsanlage",t:"single",f:"Wie viele voneinander unabhängige Bremskreise braucht ein Fahrzeug mindestens?",o:["Einen","Zwei","Drei","Vier"],r:[1],e:"Zwei Kreise sind Vorschrift. Fällt einer aus, bremst der andere immer noch.",w:"Übliche Aufteilungen sind diagonal, also vorne links mit hinten rechts, oder vorne und hinten getrennt."},
+{k:"Bremsanlage",t:"multi",f:"Welche Bremsanlagenarten gibt es im Fahrzeugbau?",o:["Hydraulische Bremse","Pneumatische Bremse mit Druckluft","Mechanische Bremse mit Seil oder Gestänge","Elektromechanische Feststellbremse","Magnetische Schwebebremse am PW"],r:[0,1,2,3],e:"Personenwagen bremsen hydraulisch, Lastwagen und Anhänger mit Druckluft, die Feststellbremse mechanisch oder elektrisch.",w:"Dazu kommen Dauerbremsen wie Retarder und Motorbremse, die unterstützen aber nur."},
+{k:"Bremsanlage",t:"single",f:"Welches Bauteil erzeugt den Flüssigkeitsdruck, wenn du aufs Pedal trittst?",o:["Der Bremssattel","Der Hauptbremszylinder","Der Radbremszylinder","Die ABS Pumpe"],r:[1],e:"Der Hauptbremszylinder drückt die Flüssigkeit in die Leitungen.",w:"Er hat zwei hintereinander liegende Kolben, einen pro Bremskreis. Darum bremst der zweite Kreis auch dann noch, wenn der erste leckt."},
+{k:"Bremsanlage",t:"single",f:"Nach welchem Grundsatz arbeitet die hydraulische Bremsanlage?",o:["Der Druck in einer Flüssigkeit wirkt überall gleich gross","Flüssigkeit lässt sich stark zusammenpressen","Der Druck ist am Pedal am grössten und wird zum Rad hin kleiner","Die Flüssigkeit erzeugt selber Kraft"],r:[0],e:"Flüssigkeit lässt sich praktisch nicht zusammendrücken, darum ist der Druck im ganzen Kreis gleich.",w:"Weil die Kolbenflächen an der Radbremse grösser sind als am Hauptbremszylinder, wird aus wenig Pedalkraft eine grosse Bremskraft."},
+{k:"Bremsanlage",t:"single",f:"Bring die hydraulische Kette in die richtige Reihenfolge.",o:["Pedal, Bremskraftverstärker, Hauptbremszylinder, Leitung, Radbremse","Pedal, Hauptbremszylinder, Bremskraftverstärker, Radbremse","Hauptbremszylinder, Pedal, Leitung, Radbremse","Pedal, ABS Pumpe, Bremskraftverstärker, Trommel"],r:[0],e:"Zuerst die Fusskraft, dann die Verstärkung, dann der Druckaufbau, dann die Leitung zum Rad.",w:"Zwischen Leitung und Radbremse sitzt beim modernen Fahrzeug noch der ABS Hydraulikblock."},
+{k:"Bremsanlage",t:"single",f:"Was macht der Bremskraftverstärker?",o:["Er erhöht die Fusskraft am Pedal mit Unterdruck","Er verhindert das Blockieren der Räder","Er verteilt die Bremskraft auf Vorder und Hinterachse","Er hält den Druck nach dem Bremsen aufrecht"],r:[0],e:"Der Unterdruck zieht an einer Membran und hilft mit.",w:"Auf einer Seite der Membran herrscht Unterdruck, auf der anderen Luftdruck. Dieser Unterschied drückt zusätzlich auf die Kolbenstange."},
+{k:"Bremsanlage",t:"single",f:"Woher nimmt der Bremskraftverstärker beim Dieselmotor seinen Unterdruck?",o:["Aus dem Saugrohr","Von einer eigenen Vakuumpumpe","Vom Turbolader","Aus dem Auspuff"],r:[1],e:"Der Diesel hat keine Drosselklappe und darum zu wenig Unterdruck im Saugrohr.",w:"Auch viele Elektro und Hybridfahrzeuge haben eine elektrische Vakuumpumpe, weil kein Saugmotor da ist."},
+{k:"Bremsanlage",t:"single",f:"Warum sind die Bremsen an der Vorderachse stärker ausgelegt?",o:["Beim Bremsen verlagert sich das Gewicht nach vorne","Weil vorne der Motor läuft","Weil die Vorderreifen breiter sind","Damit das Fahrzeug hinten leichter wird"],r:[0],e:"Durch die Achslastverlagerung drückt beim Bremsen viel mehr Gewicht auf die Vorderachse.",w:"Rund 70 Prozent der Bremsarbeit macht die Vorderachse. Darum sind vorne die Scheiben grösser und meist innenbelüftet."},
+
+/* ================= SCHEIBENBREMSE ================= */
+{k:"Bremsanlage",t:"multi",f:"Welche Teile gehören zur Scheibenbremse?",o:["Bremsscheibe","Bremssattel","Bremsbeläge","Bremskolben","Bremsbacken","Bremstrommel","Rückzugfedern"],r:[0,1,2,3],e:"Bremsbacken, Trommel und Rückzugfedern gehören zur Trommelbremse.",w:"Der Kolben drückt den inneren Belag an die Scheibe, der Sattel zieht sich dabei nach und presst auch den äusseren an."},
+{k:"Bremsanlage",t:"single",f:"Was ist der Unterschied zwischen Festsattel und Schwimmsattel?",o:["Der Festsattel hat Kolben auf beiden Seiten, der Schwimmsattel nur auf einer","Der Festsattel hat gar keine Kolben","Der Schwimmsattel wird nur hinten verbaut","Der Festsattel braucht keine Bremsflüssigkeit"],r:[0],e:"Der Schwimmsattel gleitet auf Führungsbolzen und drückt so den äusseren Belag mit an.",w:"Der Festsattel bremst stärker und gleichmässiger, ist aber teurer. Man findet ihn an sportlichen und schweren Fahrzeugen."},
+{k:"Bremsanlage",t:"single",f:"Wozu ist eine Bremsscheibe innenbelüftet?",o:["Damit die Wärme besser abgeführt wird","Damit sie leichter wird","Damit sie weniger quietscht","Damit sie schneller trocknet"],r:[0],e:"Zwischen den beiden Reibringen sitzen Kühlkanäle, die Luft durchziehen.",w:"Wie ein Ventilator: beim Drehen wird Luft von innen nach aussen geschleudert und nimmt Wärme mit."},
+{k:"Bremsanlage",t:"single",f:"Was ist der grösste Vorteil der Scheibenbremse gegenüber der Trommelbremse?",o:["Sie führt die Wärme viel besser ab","Sie braucht keine Bremsflüssigkeit","Sie ist billiger in der Herstellung","Sie verstärkt sich beim Bremsen selber"],r:[0],e:"Die Scheibe liegt frei im Fahrtwind und bleibt darum kühler.",w:"Dazu kommt: sie wird beim Nachlassen des Drucks sofort frei, spricht schnell an und ist einfach zu kontrollieren."},
+
+/* ================= TROMMELBREMSE ================= */
+{k:"Bremsanlage",t:"multi",f:"Welche Teile gehören zur Trommelbremse?",o:["Bremstrommel","Bremsbacken","Radbremszylinder","Rückzugfedern","Nachstelleinrichtung","Bremssattel","Bremsscheibe"],r:[0,1,2,3,4],e:"Sattel und Scheibe gehören zur Scheibenbremse.",w:"Der Radbremszylinder hat zwei Kolben. Er drückt die Backen nach aussen gegen die Trommel, die Federn ziehen sie wieder zurück."},
+{k:"Bremsanlage",t:"single",f:"Was bedeutet Selbstverstärkung bei der Trommelbremse?",o:["Die auflaufende Backe wird von der Trommel zusätzlich angezogen","Die Trommel dreht sich schneller","Der Bremsdruck steigt von selber an","Die Federn drücken die Backen an"],r:[0],e:"Die Drehrichtung der Trommel zieht die auflaufende Backe stärker in den Reibkontakt.",w:"Darum braucht die Trommelbremse wenig Betätigungskraft. Genau darum eignet sie sich gut für die Feststellbremse."},
+{k:"Bremsanlage",t:"single",f:"Welche Bauart hat eine auflaufende und eine ablaufende Backe?",o:["Simplex","Duplex","Duo Servo","Faustsattel"],r:[0],e:"Simplex ist die einfachste und häufigste Bauart, sie bremst vorwärts und rückwärts gleich.",w:"Duplex hat zwei auflaufende Backen und bremst vorwärts stärker. Duo Servo überträgt die Kraft der ersten Backe auf die zweite."},
+{k:"Bremsanlage",t:"multi",f:"Welche Vorteile hat die Trommelbremse?",o:["Sie ist gut vor Schmutz und Wasser geschützt","Sie braucht wenig Betätigungskraft wegen der Selbstverstärkung","Die Feststellbremse lässt sich einfach einbauen","Sie ist günstig in der Herstellung","Sie führt die Wärme besser ab als die Scheibe"],r:[0,1,2,3],e:"Die schlechte Wärmeabfuhr ist genau ihr Nachteil.",w:"Darum sitzt die Trommel meist hinten, wo weniger Bremsarbeit anfällt, oder an leichten Anhängern."},
+{k:"Bremsanlage",t:"single",f:"Wozu dient die Nachstelleinrichtung in der Trommelbremse?",o:["Sie hält das Lüftspiel zwischen Backe und Trommel konstant","Sie zieht die Backen zurück","Sie kühlt die Trommel","Sie misst den Verschleiss elektronisch"],r:[0],e:"Ohne sie würde der Pedalweg mit zunehmendem Verschleiss immer länger.",w:"Bei vielen Fahrzeugen stellt sie sich automatisch nach, oft beim Betätigen der Handbremse oder beim Rückwärtsbremsen."},
+
+/* ================= FESTSTELLBREMSE ================= */
+{k:"Bremsanlage",t:"single",f:"Auf welche Räder wirkt die Feststellbremse bei den meisten Personenwagen?",o:["Auf die Hinterräder","Auf die Vorderräder","Auf alle vier Räder","Auf die Kardanwelle"],r:[0],e:"Sie wirkt mechanisch oder elektrisch auf die Hinterachse.",w:"Vorschrift ist, dass sie das Fahrzeug rein mechanisch oder ohne Hilfskraft am Hang halten kann, auch bei leerem Hydrauliksystem."},
+{k:"Bremsanlage",t:"single",f:"Wie überträgt die klassische Handbremse ihre Kraft?",o:["Über Seilzüge zu den Hinterradbremsen","Über Bremsflüssigkeit","Über Druckluft","Über einen Elektromotor am Pedal"],r:[0],e:"Der Hebel spannt ein Seil, das die Bremsbacken oder einen Hebel im Sattel betätigt.",w:"Der Seilzug muss richtig eingestellt sein: zu straff schleift die Bremse, zu locker hält sie am Hang nicht."},
+{k:"Bremsanlage",t:"single",f:"Was musst du bei der elektrischen Feststellbremse vor dem Belagwechsel machen?",o:["Den Servicemodus über das Diagnosegerät aktivieren","Die Batterie abklemmen","Das Pedal mehrmals pumpen","Den Kolben mit der Zange zurückdrücken"],r:[0],e:"Der Stellmotor muss zuerst zurückgefahren werden, sonst zerstörst du ihn.",w:"Bei der elektrischen Feststellbremse dreht ein Spindelmotor den Kolben heraus. Er lässt sich darum nicht einfach hineindrücken."},
+{k:"Bremsanlage",t:"single",f:"Warum darf die Handbremse im Winter nicht angezogen abgestellt werden?",o:["Die Beläge können an der Trommel oder Scheibe festfrieren","Die Batterie entlädt sich","Der Seilzug dehnt sich","Das Fahrzeug rollt sonst weg"],r:[0],e:"Besser den Gang einlegen oder die Parkstellung nutzen.",w:"Restfeuchtigkeit zwischen Belag und Reibfläche gefriert und klebt die Bremse fest."},
+
+/* ================= DRUCKLUFT UND DAUERBREMSE ================= */
+{k:"Bremsanlage",t:"single",f:"Warum bremsen Lastwagen und Anhänger mit Druckluft statt hydraulisch?",o:["Die nötigen Bremskräfte sind viel höher und Luft geht bei einem Leck nie aus","Druckluft ist billiger als Bremsflüssigkeit","Weil Lastwagen keine Bremsscheiben haben","Weil Luft nicht gefriert"],r:[0],e:"Der Kompressor erzeugt laufend neue Luft, eine undichte Leitung leert nicht die ganze Anlage.",w:"Aufbau: Kompressor, Lufttrockner, Vorratsbehälter, Bremsventil und Bremszylinder am Rad."},
+{k:"Bremsanlage",t:"single",f:"Wie funktioniert der Federspeicherzylinder am Lastwagen?",o:["Eine starke Feder bremst, die Druckluft hält sie gelöst","Die Druckluft bremst, die Feder löst","Er arbeitet mit Bremsflüssigkeit","Er wird elektrisch betätigt"],r:[0],e:"Fällt der Luftdruck aus, drückt die Feder die Bremse zu. Das Fahrzeug wird so automatisch gebremst.",w:"Genau darum bremst ein abgehängter Anhänger von selber und lässt sich nicht einfach wegschieben."},
+{k:"Bremsanlage",t:"single",f:"Wozu dient der Lufttrockner in der Druckluftanlage?",o:["Er entzieht der Luft Feuchtigkeit, damit nichts einfriert und rostet","Er kühlt die Luft ab","Er erhöht den Druck","Er filtert Ölnebel für die Bremsbeläge"],r:[0],e:"Wasser in der Anlage friert im Winter und blockiert Ventile.",w:"Deshalb wird der Trocknerpatrone regelmässig gewechselt und der Vorratsbehälter entwässert."},
+{k:"Bremsanlage",t:"single",f:"Was ist eine Dauerbremse und wozu braucht man sie?",o:["Motorbremse oder Retarder, damit die Betriebsbremse in langen Gefällen kühl bleibt","Eine Bremse, die immer leicht schleift","Die Feststellbremse während der Fahrt","Eine zweite Handbremse"],r:[0],e:"Sie bremst verschleissfrei und schützt die Betriebsbremse vor Überhitzung.",w:"Der Retarder bremst über Öl oder ein Magnetfeld am Antriebsstrang, die Motorbremse über Stauklappe im Auspuff oder Ventilsteuerung."},
+{k:"Bremsanlage",t:"single",f:"Wie funktioniert die Auflaufbremse an einem leichten Anhänger?",o:["Beim Bremsen schiebt der Anhänger auf die Zugvorrichtung und betätigt so seine Bremse","Über ein Kabel vom Zugfahrzeug","Über Druckluft vom Zugfahrzeug","Über einen eigenen Elektromotor"],r:[0],e:"Die Schubkraft am Zugmaul wird mechanisch auf die Radbremsen übertragen.",w:"Beim Rückwärtsfahren würde sie ebenfalls anziehen, darum gibt es eine Rückfahrautomatik in der Trommelbremse."},
+
+/* ================= ASSISTENTEN ================= */
+{k:"Bremsanlage",t:"single",f:"Was ist die Hauptaufgabe des ABS?",o:["Es verhindert das Blockieren der Räder, damit das Fahrzeug lenkbar bleibt","Es verkürzt den Bremsweg immer und überall","Es ersetzt den Bremskraftverstärker","Es verteilt die Bremskraft nur auf die Hinterachse"],r:[0],e:"Ein blockiertes Rad kann nicht mehr lenken.",w:"Der Hydraulikblock kann den Druck an jedem Rad halten, absenken und wieder aufbauen, mehrmals pro Sekunde. Das spürst du als Pulsieren."},
+{k:"Bremsanlage",t:"single",f:"Welcher Sensor liefert dem ABS Steuergerät seine Informationen?",o:["Der Raddrehzahlsensor","Der Bremsflüssigkeitssensor","Der Klopfsensor","Der Lambdasensor"],r:[0],e:"Jedes Rad hat einen Drehzahlsensor am Radlager oder an der Antriebswelle.",w:"Er liest einen Impulsring ab. Ist der Ring verschmutzt oder beschädigt, meldet das System einen Fehler."},
+{k:"Bremsanlage",t:"single",f:"Wofür steht EBV oder EBD?",o:["Elektronische Bremskraftverteilung zwischen Vorder und Hinterachse","Elektronische Bremsverstärkung","Einzelbremsventil","Elektrische Betriebsverriegelung"],r:[0],e:"Sie sorgt dafür, dass die Hinterachse nicht überbremst wird und das Heck nicht ausbricht.",w:"Früher machte das ein mechanisches Bremskraftregelventil, heute übernimmt es die ABS Hydraulik."},
+{k:"Bremsanlage",t:"single",f:"Was macht der Bremsassistent BAS?",o:["Er erkennt eine Notbremsung und baut sofort vollen Bremsdruck auf","Er bremst automatisch vor Hindernissen","Er hält den Abstand zum Vordermann","Er verhindert das Rollen am Berg"],r:[0],e:"Viele Fahrer treten in der Panik zu zaghaft. Der BAS gibt den Rest dazu.",w:"Erkannt wird die Notbremsung an der Geschwindigkeit, mit der das Pedal getreten wird."},
+{k:"Bremsanlage",t:"single",f:"Wie stabilisiert das ESP ein ausbrechendes Fahrzeug?",o:["Es bremst einzelne Räder gezielt ab und nimmt Gas weg","Es blockiert alle vier Räder","Es lenkt automatisch gegen","Es schaltet in einen tieferen Gang"],r:[0],e:"Durch das gezielte Bremsen eines Rades entsteht ein Drehmoment, das gegen das Schleudern wirkt.",w:"Das ESP nutzt die ABS Hydraulik plus Lenkwinkel, Gierraten und Querbeschleunigungssensor."},
+
+/* ================= BREMSEN PRAXIS ================= */
+{k:"Bremsanlage",t:"single",f:"Was bedeutet Fading?",o:["Die Bremswirkung lässt nach, weil die Bremse überhitzt ist","Das Bremspedal wird immer härter","Die Bremsscheibe ist verzogen","Die Bremse quietscht beim Anhalten"],r:[0],e:"Bei zu grosser Hitze sinkt der Reibwert der Beläge.",w:"Man unterscheidet Belagfading durch heisse Beläge und Fading durch Dampfblasen in der Bremsflüssigkeit."},
+{k:"Bremsanlage",t:"single",f:"Auf einer langen Passabfahrt bremst du am besten so:",o:["Motorbremse nutzen und nur kurz kräftig bremsen","Dauernd leicht auf dem Pedal stehen bleiben","Im Leerlauf rollen und nur mit der Bremse verzögern","Handbremse leicht angezogen lassen"],r:[0],e:"Dauerbremsen erhitzt die Anlage bis zum Fading.",w:"Kurze kräftige Bremsstösse mit Pausen lassen die Scheibe zwischendurch abkühlen."},
+{k:"Bremsanlage",t:"single",f:"Das Bremspedal lässt sich weich und schwammig durchtreten. Was ist die wahrscheinlichste Ursache?",o:["Luft in der Bremsanlage","Zu neue Bremsbeläge","Zu hoher Reifendruck","Ein defekter Raddrehzahlsensor"],r:[0],e:"Luft lässt sich zusammendrücken, Bremsflüssigkeit nicht.",w:"Beim Entlüften wird immer am weitesten entfernten Rad begonnen, wenn der Hersteller nichts anderes vorschreibt."},
+{k:"Bremsanlage",t:"single",f:"Woran erkennst du eine verzogene Bremsscheibe beim Fahren?",o:["Das Bremspedal pulsiert und das Lenkrad zittert beim Bremsen","Das Pedal geht bis zum Boden","Die Bremse zieht nur beim Rückwärtsfahren","Die Handbremse hält nicht mehr"],r:[0],e:"Der Schlag der Scheibe drückt den Kolben im Takt zurück.",w:"Ursache ist oft ungleichmässige Hitze, Rost oder ein nicht gereinigter Nabensitz beim Einbau."},
+{k:"Bremsanlage",t:"single",f:"Womit misst du die Dicke einer Bremsscheibe?",o:["Mit dem Mikrometer oder der Bremsscheibenlehre","Mit dem Massband","Mit der Fühlerlehre","Mit dem Drehmomentschlüssel"],r:[0],e:"Die Mindestdicke ist auf der Scheibe eingeprägt.",w:"Gemessen wird an mehreren Stellen rundum, weil die Scheibe ungleichmässig abgenützt sein kann."},
+{k:"Bremsanlage",t:"single",f:"Was musst du beim Zurückstellen des Bremskolbens beachten?",o:["Der Flüssigkeitsstand im Behälter steigt an und kann überlaufen","Der Motor muss dabei laufen","Die Handbremse muss angezogen sein","Das Rad muss montiert bleiben"],r:[0],e:"Die verdrängte Flüssigkeit fliesst zurück in den Behälter.",w:"Vorher den Stand kontrollieren und wenn nötig absaugen. Alte Flüssigkeit nie zurück in den Kreislauf pressen."},
+{k:"Bremsanlage",t:"single",f:"Womit reinigst du eine verschmutzte Bremsanlage?",o:["Mit Bremsenreiniger","Mit Motorenöl","Mit Wasser und Seife","Mit Rostlöser"],r:[0],e:"Öl und Fett auf dem Belag zerstören die Bremswirkung.",w:"Bremsstaub nie ausblasen, sondern absaugen oder nass abwaschen. Der Staub gehört nicht in die Lunge."},
+{k:"Bremsanlage",t:"single",f:"Die Bremse zieht einseitig. Was passt als Ursache am besten?",o:["Ein festsitzender Bremskolben oder Führungsbolzen","Zu viel Bremsflüssigkeit im Behälter","Ein zu neuer Bremsbelag","Ein defektes Bremslicht"],r:[0],e:"Wenn eine Seite klemmt, bremst sie nicht oder zu stark.",w:"Führungsbolzen des Schwimmsattels beim Belagwechsel immer reinigen und mit dem vorgeschriebenen Fett schmieren."},
+{k:"Bremsanlage",t:"single",f:"Wozu dient der Verschleisskontakt am Bremsbelag?",o:["Er schliesst bei dünnem Belag einen Stromkreis und meldet den Verschleiss im Display","Er misst die Temperatur","Er hält den Belag im Sattel","Er verhindert das Quietschen"],r:[0],e:"Ein Draht im Belag wird bei Verschleiss durchgerieben oder gegen die Scheibe geschliffen.",w:"Nicht alle Fahrzeuge haben ihn. Darum gehört der Belag bei jedem Service von Auge kontrolliert."},
+{k:"Bremsanlage",t:"single",f:"Warum wird die Bremse bei Nässe automatisch kurz angelegt?",o:["Damit der Wasserfilm von der Scheibe gewischt wird und die Bremse sofort greift","Damit die Beläge nicht rosten","Damit das ABS aktiv bleibt","Damit die Scheibe abkühlt"],r:[0],e:"Bei eingeschaltetem Scheibenwischer legt das System die Beläge in Intervallen ganz leicht an.",w:"Ohne das würde die erste Bremsung im Regen deutlich schwächer ausfallen."},
+{k:"Bremsanlage",t:"multi",f:"Welche Bauteile gehören zur hydraulischen Übertragung?",o:["Hauptbremszylinder","Bremsleitungen","Bremsschläuche","Radbremszylinder","Bremsflüssigkeitsbehälter","Raddrehzahlsensor","Bremsseil der Handbremse"],r:[0,1,2,3,4],e:"Sensor und Handbremsseil gehören nicht zum Hydraulikkreis.",w:"Starre Leitungen liegen an der Karosserie, flexible Schläuche überbrücken die Bewegung zum Rad."},
+
+/* ================= BREMSFLÜSSIGKEIT ================= */
+{k:"Bremsflüssigkeit",t:"single",f:"Was bedeutet es, dass Bremsflüssigkeit hygroskopisch ist?",o:["Sie zieht Wasser aus der Luft an","Sie wird mit der Zeit dickflüssiger","Sie brennt sehr leicht","Sie schäumt beim Bremsen"],r:[0],e:"Über Schläuche und Behälter nimmt sie laufend Feuchtigkeit auf.",w:"Nach zwei Jahren hat sie oft schon über drei Prozent Wasser. Darum der feste Wechselrhythmus."},
+{k:"Bremsflüssigkeit",t:"single",f:"Was passiert mit dem Siedepunkt, wenn Wasser in der Bremsflüssigkeit ist?",o:["Er sinkt","Er steigt","Er bleibt gleich","Er wird unwichtig"],r:[0],e:"Tiefer Siedepunkt heisst Dampfblasen bei heisser Bremse.",w:"DOT 4 hat neu einen Trockensiedepunkt von mindestens 230 Grad, mit Wasser sinkt er gegen 155 Grad."},
+{k:"Bremsflüssigkeit",t:"single",f:"In welchem Abstand wird Bremsflüssigkeit normalerweise gewechselt?",o:["Alle 2 Jahre","Alle 10 Jahre","Nur beim Belagwechsel","Gar nie"],r:[0],e:"Zwei Jahre oder nach Herstellerangabe.",w:"Der Wassergehalt lässt sich mit einem Prüfgerät im Behälter messen."},
+{k:"Bremsflüssigkeit",t:"single",f:"Was entsteht, wenn die Bremsflüssigkeit an der heissen Bremse zu kochen beginnt?",o:["Dampfblasen und das Pedal geht durch","Ein härteres Pedal","Mehr Bremskraft","Eine Warnung im Display"],r:[0],e:"Dampf lässt sich zusammendrücken, der Druck kommt nicht mehr am Rad an.",w:"Das ist der gefährlichste Zustand überhaupt: das Pedal fühlt sich leer an, obwohl die Anlage dicht ist."},
+{k:"Bremsflüssigkeit",t:"single",f:"Welche Bremsflüssigkeit ist heute am weitesten verbreitet?",o:["DOT 4","Motorenöl 10W-40","Kühlerfrostschutz G12","Hydrauliköl HLP 46"],r:[0],e:"Üblich sind DOT 4 und DOT 5.1, immer nach Herstellerangabe.",w:"DOT 5 auf Silikonbasis ist etwas ganz anderes und darf nicht mit DOT 4 gemischt werden."},
+{k:"Bremsflüssigkeit",t:"single",f:"Bremsflüssigkeit auf dem Kotflügel: was tust du?",o:["Sofort mit viel Wasser abspülen","Trocken wegwischen und stehen lassen","Mit Bremsenreiniger einreiben","Nichts, sie verdunstet von selber"],r:[0],e:"Bremsflüssigkeit greift den Lack an.",w:"Sie ist zudem giftig und gehört als Sonderabfall entsorgt, nie in den Ausguss."},
+{k:"Bremsflüssigkeit",t:"single",f:"Der Stand im Bremsflüssigkeitsbehälter ist langsam gesunken. Häufigste harmlose Ursache?",o:["Die Bremsbeläge sind abgenützt und die Kolben stehen weiter draussen","Die Flüssigkeit ist verdunstet","Es hat zu viel Luft im System","Der Behälter ist zu klein"],r:[0],e:"Sinkt der Stand schnell, hast du ein Leck.",w:"Darum beim Nachfüllen immer zuerst den Belagverschleiss prüfen, statt einfach aufzufüllen."},
+
+/* ================= SCHMIERSTOFFE ================= */
+{k:"Schmierstoffe",t:"multi",f:"Nenne die fünf Hauptaufgaben von Motorenöl. Wähle genau fünf aus.",o:["Schmieren","Kühlen","Abdichten","Reinigen","Vor Korrosion schützen","Den Motor starten","Den Treibstoff verbrennen","Das Öl filtern"],r:[0,1,2,3,4],e:"Schmieren, kühlen, abdichten, reinigen, vor Korrosion schützen.",w:"Je nach Lehrmittel kommen noch dämpfen von Geräuschen und Kraft übertragen dazu, etwa bei Hydrostösseln."},
+{k:"Schmierstoffe",t:"single",f:"Was bedeutet das W in der Bezeichnung SAE 5W-40?",o:["Winter, es beschreibt das Verhalten bei Kälte","Wasserfest","Wechselintervall","Wärmeleitfähigkeit"],r:[0],e:"Je kleiner die Zahl vor dem W, desto besser fliesst das Öl beim Kaltstart.",w:"Rund die Hälfte des Motorverschleisses passiert in den ersten Sekunden nach dem Kaltstart. Darum ist diese Zahl so wichtig."},
+{k:"Schmierstoffe",t:"single",f:"Wofür steht die zweite Zahl bei SAE 5W-40?",o:["Für die Viskosität bei 100 Grad Betriebstemperatur","Für den Ölstand in Liter","Für die Anzahl Kilometer bis zum Wechsel","Für den Preis pro Liter"],r:[0],e:"Sie zeigt, wie zähflüssig das Öl im heissen Motor noch ist.",w:"Zu dünn heisst abreissender Schmierfilm, zu dick heisst schlechter Durchfluss und mehr Verbrauch."},
+{k:"Schmierstoffe",t:"single",f:"Was versteht man unter Viskosität?",o:["Die Zähflüssigkeit eines Öls","Die Farbe des Öls","Den Wassergehalt","Die Menge im Motor"],r:[0],e:"Kaltes Öl ist zäh, heisses Öl ist dünn.",w:"Ein Mehrbereichsöl hält diesen Unterschied mit Zusätzen klein, so passt es für Winter und Sommer."},
+{k:"Schmierstoffe",t:"single",f:"Was ist der Unterschied zwischen Mineralöl und vollsynthetischem Öl?",o:["Synthetiköl wird gezielt hergestellt und ist temperatur und alterungsbeständiger","Mineralöl ist immer besser","Synthetiköl enthält kein Erdöl und ist Wasser","Es gibt keinen Unterschied ausser dem Preis"],r:[0],e:"Mineralöl wird nur aus Erdöl raffiniert, Synthetiköl chemisch aufgebaut.",w:"Dazwischen liegt das teilsynthetische Öl. Moderne Motoren mit langen Serviceintervallen brauchen praktisch immer Synthetiköl."},
+{k:"Schmierstoffe",t:"single",f:"Warum darf man nicht einfach irgendein Öl mit der richtigen SAE Klasse einfüllen?",o:["Der Motor braucht zusätzlich die vorgeschriebene Freigabe des Herstellers","Weil die Farbe nicht passt","Weil sonst der Ölfilter verstopft","Weil das Öl sonst gefriert"],r:[0],e:"Freigaben wie ACEA, API oder herstellereigene Normen regeln die Zusammensetzung.",w:"Ein Diesel mit Partikelfilter braucht aschearmes Öl. Falsches Öl setzt den Filter zu und das wird teuer."},
+{k:"Schmierstoffe",t:"multi",f:"Welche Reibungsarten gibt es an geschmierten Bauteilen?",o:["Trockenreibung","Mischreibung","Flüssigkeitsreibung","Luftreibung im Zylinder","Magnetreibung"],r:[0,1,2],e:"Ziel ist die Flüssigkeitsreibung: die Teile schwimmen auf einem Ölfilm und berühren sich nicht.",w:"Beim Anfahren und Abstellen entsteht kurz Mischreibung. Trockenreibung bedeutet Fresser und Motorschaden."},
+{k:"Schmierstoffe",t:"multi",f:"Welche Schmierungsarten kennst du im Fahrzeug?",o:["Druckumlaufschmierung","Tauchschmierung","Verlustschmierung","Fettschmierung","Wasserschmierung"],r:[0,1,2,3],e:"Der Motor arbeitet mit Druckumlauf, das Getriebe oft mit Tauchschmierung, Radlager mit Fett.",w:"Verlustschmierung heisst, der Schmierstoff wird verbraucht, zum Beispiel beim Zweitaktmotor oder an der Sägekette."},
+{k:"Schmierstoffe",t:"single",f:"Welches Bauteil erzeugt den Öldruck im Motor?",o:["Die Ölpumpe","Der Ölfilter","Die Ölwanne","Der Ölmessstab"],r:[0],e:"Sie saugt aus der Wanne an und drückt das Öl über den Filter zu den Schmierstellen.",w:"Angetrieben wird sie von der Kurbelwelle oder einer Kette. Ein Überdruckventil begrenzt den Druck bei kaltem Öl."},
+{k:"Schmierstoffe",t:"single",f:"Die rote Öllampe leuchtet während der Fahrt. Was bedeutet das?",o:["Der Öldruck ist zu tief, sofort anhalten und Motor abstellen","Es ist Zeit für den nächsten Service","Das Öl ist zu kalt","Der Ölfilter ist neu"],r:[0],e:"Die rote Lampe warnt vor fehlendem Druck, nicht vor tiefem Ölstand.",w:"Ohne Druck läuft kein Öl zu den Lagern. Nach wenigen Sekunden entsteht bereits Schaden."},
+{k:"Schmierstoffe",t:"single",f:"Wie misst du den Ölstand richtig?",o:["Fahrzeug waagrecht, Motor abgestellt, einige Minuten warten, Messstab abwischen und nochmals eintauchen","Bei laufendem Motor direkt am Stab ablesen","Sofort nach der Autobahnfahrt ohne zu warten","Am Ölfilter von aussen abschätzen"],r:[0],e:"Das Öl muss zuerst in die Wanne zurücklaufen.",w:"Zwischen Minimum und Maximum liegt meist etwa ein Liter. Nie über Maximum füllen."},
+{k:"Schmierstoffe",t:"single",f:"Was ist die Aufgabe des Ölfilters?",o:["Er hält Schmutz und Abrieb aus dem Ölkreislauf zurück","Er kühlt das Öl","Er erhöht den Öldruck","Er mischt Additive ins Öl"],r:[0],e:"Ist er verstopft, öffnet ein Umgehungsventil.",w:"Dann läuft ungefiltertes Öl im Motor. Das ist immer noch besser als gar kein Öl, aber schädlich auf Dauer."},
+{k:"Schmierstoffe",t:"single",f:"Warum werden dem Öl Additive beigemischt?",o:["Um Verschleiss, Alterung und Ablagerungen zu verringern","Damit es besser riecht","Damit es dunkler aussieht","Damit es schneller verdunstet"],r:[0],e:"Typisch sind Verschleissschutz, Detergentien und Antioxidantien.",w:"Detergentien halten den Russ in der Schwebe. Darum wird gutes Öl schnell schwarz, das ist ein gutes Zeichen."},
+{k:"Schmierstoffe",t:"single",f:"Was passiert bei zu viel Öl im Motor?",o:["Die Kurbelwelle schlägt ins Öl, es schäumt und der Katalysator kann Schaden nehmen","Nichts, mehr Öl schmiert besser","Der Motor läuft kühler und sparsamer","Der Ölfilter arbeitet genauer"],r:[0],e:"Geschäumtes Öl hat keinen stabilen Druck mehr.",w:"Zu viel Öl drückt zudem an den Dichtungen durch und gelangt über die Entlüftung in den Ansaugtrakt."},
+{k:"Schmierstoffe",t:"single",f:"Was zeigt bläulicher Rauch aus dem Auspuff an?",o:["Der Motor verbrennt Öl","Der Motor ist zu kalt","Der Treibstoff ist zu fett","Kühlmittel gelangt in den Brennraum"],r:[0],e:"Meist sind Kolbenringe oder Ventilschaftdichtungen verschlissen.",w:"Weisser Rauch deutet auf Kühlmittel hin, schwarzer auf zu fettes Gemisch."},
+{k:"Schmierstoffe",t:"single",f:"Welches Öl gehört ins Schaltgetriebe?",o:["Getriebeöl nach Herstellerangabe, zum Beispiel SAE 75W-90","Das gleiche Motorenöl wie im Motor","Bremsflüssigkeit","Hydrauliköl aus der Servolenkung"],r:[0],e:"Getriebeöl hat andere Zusätze für die hohe Flächenpressung an den Zahnrädern.",w:"Die GL Klassen zeigen die Belastbarkeit. GL-5 enthält aggressivere Zusätze und passt nicht in jedes Getriebe mit Buntmetall."},
+{k:"Schmierstoffe",t:"single",f:"Welche Flüssigkeit wird im Automatikgetriebe verwendet?",o:["ATF, meist rot eingefärbt","Motorenöl 5W-30","Kühlmittel","Bremsflüssigkeit DOT 4"],r:[0],e:"ATF schmiert, kühlt, überträgt Kraft im Wandler und betätigt die Kupplungen.",w:"Die rote Farbe hilft, ein Leck zu unterscheiden: rot ist ATF, braun ist Motorenöl, grün oder pink ist Kühlmittel."},
+{k:"Schmierstoffe",t:"single",f:"Wo wird typischerweise Fett statt Öl verwendet?",o:["An Radlagern, Gelenken und Führungsbolzen","Im Kurbelgehäuse","Im Kühlsystem","Im Bremskreis"],r:[0],e:"Fett bleibt an Ort und Stelle und dichtet gegen Schmutz und Wasser ab.",w:"Fett ist Öl mit einem Verdicker, meist Seife. Die NLGI Klasse gibt an, wie fest es ist, üblich ist Klasse 2."},
+{k:"Schmierstoffe",t:"single",f:"Welches Fett gehört an die Führungsbolzen eines Bremssattels?",o:["Ein spezielles temperaturbeständiges Bremsenfett, das die Gummis nicht angreift","Normales Mehrzweckfett","Motorenöl","Kupferpaste auf der ganzen Führung"],r:[0],e:"Falsches Fett lässt die Gummimanschetten aufquellen und der Bolzen klemmt.",w:"Kupfer oder Keramikpaste kommt nur auf die Rückseite des Belags und auf den Nabensitz, nie auf die Reibfläche."},
+{k:"Schmierstoffe",t:"single",f:"Warum darf auf einen Zahnriemen kein Öl gelangen?",o:["Öl greift das Gummi an, der Riemen kann reissen","Der Riemen wird zu leise","Öl macht ihn zu straff","Der Riemen dehnt sich dann nicht mehr"],r:[0],e:"Ein undichter Simmerring ist beim Zahnriemenwechsel darum immer mit zu ersetzen.",w:"Ein gerissener Zahnriemen bedeutet beim Motor mit engem Ventilspiel fast immer einen Totalschaden."},
+{k:"Schmierstoffe",t:"multi",f:"Was gehört zu einem korrekten Ölwechsel?",o:["Motor warmfahren, damit das Öl gut abfliesst","Dichtring der Ablassschraube ersetzen","Ablassschraube mit Drehmoment anziehen","Ölfilter ersetzen und die neue Dichtung leicht einölen","Nach dem Füllen den Stand kontrollieren und auf Dichtheit prüfen","Das Altöl in den Kanalisationsschacht leeren"],r:[0,1,2,3,4],e:"Altöl ist Sonderabfall und gehört in den Sammelbehälter.",w:"Ein Liter Altöl verunreinigt rund eine Million Liter Wasser. Darum ist die Entsorgung streng geregelt."},
+{k:"Schmierstoffe",t:"multi",f:"Welche Aussagen über Öl stimmen?",o:["Kaltes Öl ist zähflüssiger als heisses","Öl kann Kraft übertragen, zum Beispiel bei Hydrostösseln","Öl nimmt Verbrennungsrückstände auf und wird darum dunkel","Öl schützt Bauteile vor Rost","Öl wird mit der Zeit von selber wieder sauber","Motorenöl und Getriebeöl sind immer dasselbe"],r:[0,1,2,3],e:"Öl wird nie von selber besser und Getriebeöl hat ganz andere Anforderungen.",w:"Öl altert durch Hitze, Russ, Wasser und Treibstoffeintrag. Darum das Wechselintervall einhalten."},
+{k:"Schmierstoffe",t:"single",f:"Welche Schutzmassnahme gilt beim Umgang mit Altöl?",o:["Handschuhe tragen und Hautkontakt vermeiden","Nur bei laufendem Motor arbeiten","Öl mit blossen Händen prüfen","Altöl im Freien verbrennen"],r:[0],e:"Altöl enthält krebserregende Verbrennungsrückstände.",w:"Nach dem Arbeiten Hände waschen und Hautschutzcreme verwenden. Ölgetränkte Lappen gehören in den Sonderabfall."},
+
+/* ================= KÜHLMITTEL ================= */
+{k:"Kühlmittel",t:"multi",f:"Nenne die sieben Aufgaben der Kühlflüssigkeit. Wähle genau sieben aus.",o:["Wärme vom Motor abführen","Vor dem Gefrieren schützen","Den Siedepunkt erhöhen","Vor Korrosion schützen","Kalkablagerungen verhindern","Die Wasserpumpe schmieren","Mit Dichtungen und Schläuchen verträglich sein","Den Treibstoffverbrauch senken","Das Motorenöl reinigen"],r:[0,1,2,3,4,5,6],e:"Kühlen, Frostschutz, höherer Siedepunkt, Korrosionsschutz, kein Kalk, Pumpe schmieren, Materialverträglichkeit.",w:"Alles ausser dem Kühlen kommt von den Zusätzen. Reines Wasser könnte nur kühlen und würde alles andere verschlechtern."},
+{k:"Kühlmittel",t:"single",f:"Woraus besteht Kühlflüssigkeit?",o:["Aus Wasser, Glykol und Additiven","Nur aus destilliertem Wasser","Aus Wasser und Motorenöl","Aus Wasser und Bremsflüssigkeit"],r:[0],e:"Glykol bringt Frostschutz und höheren Siedepunkt, die Additive schützen vor Korrosion.",w:"Die Additive verbrauchen sich mit der Zeit. Darum wird auch Kühlmittel nach Herstellerangabe gewechselt."},
+{k:"Kühlmittel",t:"single",f:"Bis etwa zu welcher Temperatur schützt ein Mischverhältnis von 1 zu 1?",o:["Etwa minus 37 Grad","Etwa minus 5 Grad","Etwa minus 80 Grad","Etwa 0 Grad"],r:[0],e:"Halb Wasser, halb Frostschutz ist die übliche Mischung.",w:"Noch mehr Glykol bringt nicht mehr Schutz, sondern verschlechtert die Wärmeaufnahme wieder."},
+{k:"Kühlmittel",t:"single",f:"Warum darf man nicht einfach nur Wasser einfüllen?",o:["Es gefriert, siedet zu früh und verursacht Korrosion","Es ist zu teuer","Es ist zu dickflüssig","Es schmiert den Motor zu stark"],r:[0],e:"Reines Wasser gefriert bei 0 Grad und greift die Metallteile an.",w:"Gefrierendes Wasser dehnt sich aus und kann den Motorblock sprengen."},
+{k:"Kühlmittel",t:"single",f:"Wie hoch ist die normale Betriebstemperatur eines Motors ungefähr?",o:["Etwa 90 Grad","Etwa 40 Grad","Etwa 140 Grad","Etwa 200 Grad"],r:[0],e:"Rund 85 bis 95 Grad.",w:"Zu kalt heisst mehr Verschleiss, mehr Verbrauch und Kondenswasser im Öl. Zu heiss heisst Motorschaden."},
+{k:"Kühlmittel",t:"single",f:"Warum steht das Kühlsystem unter Überdruck?",o:["Weil dadurch der Siedepunkt steigt","Damit die Wasserpumpe weniger arbeiten muss","Damit das Kühlmittel dünner wird","Damit der Thermostat schneller öffnet"],r:[0],e:"Rund 1,4 bar Überdruck heben den Siedepunkt auf etwa 120 Grad.",w:"So kann der Motor heisser laufen, ohne dass das Kühlmittel kocht. Das macht ihn effizienter."},
+{k:"Kühlmittel",t:"single",f:"Wo sitzt das Überdruckventil des Kühlsystems?",o:["Im Verschlussdeckel des Ausgleichsbehälters","In der Wasserpumpe","Im Thermostat","Im Kühlerventilator"],r:[0],e:"Der Deckel hält den Druck und lässt bei Überdruck ab.",w:"Er hat zusätzlich ein Unterdruckventil, damit beim Abkühlen wieder Luft nachströmen kann."},
+{k:"Kühlmittel",t:"single",f:"Der Motor ist heiss. Darfst du den Kühlerdeckel öffnen?",o:["Nein, es besteht Verbrühungsgefahr durch heissen Dampf","Ja, aber nur mit Handschuhen","Ja, wenn der Motor läuft","Ja, ohne Einschränkung"],r:[0],e:"Zuerst abkühlen lassen.",w:"Unter Druck steht das Kühlmittel über 100 Grad. Beim Öffnen siedet es schlagartig und spritzt heraus."},
+{k:"Kühlmittel",t:"single",f:"Was macht der Thermostat?",o:["Er sperrt den grossen Kreislauf, bis der Motor warm ist","Er misst den Kühlmittelstand","Er treibt die Wasserpumpe an","Er schaltet den Ventilator ein"],r:[0],e:"So kommt der Motor schnell auf Betriebstemperatur.",w:"Im Inneren sitzt ein Dehnstoffelement aus Wachs. Es schmilzt bei einer bestimmten Temperatur und schiebt das Ventil auf."},
+{k:"Kühlmittel",t:"single",f:"Der Motor wird nicht mehr richtig warm und die Heizung bleibt lau. Was liegt nahe?",o:["Der Thermostat hängt offen","Der Kühlerventilator ist defekt","Zu wenig Frostschutz im Wasser","Der Kühlerdeckel ist zu fest zu"],r:[0],e:"Bleibt der grosse Kreislauf immer offen, kühlt das Kühlmittel zu stark aus.",w:"Umgekehrt gilt: hängt der Thermostat geschlossen, überhitzt der Motor obwohl der Kühler kalt bleibt."},
+{k:"Kühlmittel",t:"single",f:"Welches Bauteil wälzt die Kühlflüssigkeit im Motor um?",o:["Die Wasserpumpe","Der Thermostat","Der Ausgleichsbehälter","Der Ölkühler"],r:[0],e:"Angetrieben wird sie meist vom Keilrippenriemen oder vom Zahnriemen.",w:"Wird sie vom Zahnriemen angetrieben, ersetzt man sie sinnvollerweise gleich beim Riemenwechsel mit."},
+{k:"Kühlmittel",t:"single",f:"Wozu dient der Wärmetauscher im Innenraum?",o:["Er nutzt die Motorwärme, um den Innenraum zu heizen","Er kühlt das Getriebeöl","Er entlüftet das Kühlsystem","Er kühlt die Klimaanlage"],r:[0],e:"Er hängt am Kühlkreislauf und wird vom Gebläse durchströmt.",w:"Darum wird die Heizung erst warm, wenn der Motor warm ist. Bei Überhitzung kann man mit voller Heizung etwas Wärme abführen."},
+{k:"Kühlmittel",t:"single",f:"Womit prüfst du den Frostschutz der Kühlflüssigkeit?",o:["Mit dem Refraktometer oder dem Frostschutzprüfer","Mit dem Multimeter","Mit der Fühlerlehre","Mit dem Manometer"],r:[0],e:"Das Refraktometer ist genauer als der einfache Spindelprüfer.",w:"Es misst, wie stark die Flüssigkeit das Licht bricht. Daraus ergibt sich der Glykolanteil."},
+{k:"Kühlmittel",t:"single",f:"Darfst du verschiedene Kühlmittelsorten mischen?",o:["Nein, nur die vom Hersteller freigegebene Sorte verwenden","Ja, die Farbe ist egal","Ja, solange beide Frostschutz enthalten","Ja, wenn man danach spült"],r:[0],e:"Unterschiedliche Additivpakete können ausflocken.",w:"Die Farbe ist nur ein Hinweis, keine Garantie. Massgebend ist die Freigabe wie G12, G13 oder die Herstellernorm."},
+{k:"Kühlmittel",t:"single",f:"Der Kühlmittelstand sinkt immer wieder und im Öl hat es hellen Schaum. Was vermutest du?",o:["Eine defekte Zylinderkopfdichtung","Einen verschmutzten Luftfilter","Zu viel Öl im Motor","Eine leere Batterie"],r:[0],e:"Kühlmittel gelangt ins Öl und bildet den typischen hellbraunen Schlamm.",w:"Prüfen lässt sich das mit einem CO Test im Ausgleichsbehälter oder mit der Druckprüfung des Kühlsystems."},
+{k:"Kühlmittel",t:"multi",f:"Welche Bauteile gehören zum Kühlkreislauf?",o:["Kühler","Wasserpumpe","Thermostat","Ausgleichsbehälter","Kühlerventilator","Wärmetauscher der Heizung","Ölfilter","Bremskraftverstärker"],r:[0,1,2,3,4,5],e:"Ölfilter und Bremskraftverstärker gehören nicht dazu.",w:"Der Kühler gibt die Wärme an die Fahrtluft ab. Reicht das nicht, schaltet der Ventilator dazu."},
+{k:"Kühlmittel",t:"single",f:"Wann schaltet der Kühlerventilator ein?",o:["Wenn die Temperatur trotz Kühler zu hoch wird, oft im Stand oder bei Stau","Nur bei laufender Klimaanlage","Immer beim Starten","Nur auf der Autobahn"],r:[0],e:"Bei langsamer Fahrt fehlt der Fahrtwind, dann muss der Ventilator ran.",w:"Er läuft bei vielen Fahrzeugen nach dem Abstellen noch nach. Darum Vorsicht bei Arbeiten im Motorraum."}
+];
+
+const KATEGORIEN=["Bremsanlage","Bremsflüssigkeit","Schmierstoffe","Kühlmittel"];
+
+const LERNBLATT=[
+{titel:"Bremsanlage: Aufbau und Wirkungskette",html:`
+<h4>Vier Bremsarten</h4>
+<ul><li>Betriebsbremse: normales Bremsen mit dem Pedal</li><li>Hilfsbremse: springt ein, wenn die Betriebsbremse teilweise ausfällt</li><li>Feststellbremse: hält das Fahrzeug im Stand</li><li>Dauerbremse: Motorbremse oder Retarder für lange Gefälle</li></ul>
+<h4>Weg der Kraft in der hydraulischen Anlage</h4>
+<p>Pedal, Bremskraftverstärker, Hauptbremszylinder, Leitungen und Schläuche, ABS Block, Radbremse.</p>
+<h4>Warum es funktioniert</h4>
+<p>Flüssigkeit lässt sich nicht zusammendrücken. Der Druck ist überall gleich gross, die grössere Kolbenfläche am Rad macht daraus eine grosse Kraft.</p>
+<div class="merk">Zwei Bremskreise sind Vorschrift. Fällt einer aus, bremst der andere weiter.</div>`},
+{titel:"Scheibe, Trommel und Feststellbremse",html:`
+<h4>Scheibenbremse</h4>
+<ul><li>Teile: Scheibe, Sattel, Kolben, Beläge</li><li>Schwimmsattel hat Kolben auf einer Seite, Festsattel auf beiden</li><li>Führt die Wärme gut ab, spricht schnell an, wenig Fading</li></ul>
+<h4>Trommelbremse</h4>
+<ul><li>Teile: Trommel, Backen, Radbremszylinder, Federn, Nachstelleinrichtung</li><li>Selbstverstärkung durch die auflaufende Backe, darum wenig Kraft nötig</li><li>Bauarten: Simplex, Duplex, Duo Servo</li><li>Geschützt vor Schmutz, aber schlechte Wärmeabfuhr</li></ul>
+<h4>Feststellbremse</h4>
+<ul><li>Wirkt auf die Hinterräder, mechanisch über Seilzug oder elektrisch</li><li>Muss ohne Hydraulik halten können</li><li>Elektrische Variante braucht vor dem Belagwechsel den Servicemodus</li></ul>`},
+{titel:"Druckluft, Anhänger und Dauerbremse",html:`
+<h4>Druckluftbremse am Lastwagen</h4>
+<p>Kompressor, Lufttrockner, Vorratsbehälter, Bremsventil, Bremszylinder am Rad.</p>
+<ul><li>Federspeicher: die Feder bremst, die Luft hält gelöst</li><li>Bei Druckverlust bremst das Fahrzeug automatisch</li><li>Der Lufttrockner verhindert Eis und Rost in der Anlage</li></ul>
+<h4>Dauerbremse</h4>
+<p>Motorbremse mit Stauklappe oder Ventilsteuerung, Retarder über Öl oder Magnetfeld. Beide bremsen verschleissfrei und halten die Betriebsbremse kühl.</p>
+<h4>Auflaufbremse</h4>
+<p>Der leichte Anhänger schiebt beim Bremsen auf die Zugvorrichtung und betätigt so seine eigene Bremse.</p>`},
+{titel:"Helfer: ABS, EBV, BAS, ESP",html:`
+<ul><li><b>ABS</b> verhindert das Blockieren, das Fahrzeug bleibt lenkbar</li><li><b>EBV</b> verteilt die Bremskraft zwischen Vorder und Hinterachse</li><li><b>BAS</b> erkennt die Notbremsung und gibt vollen Druck</li><li><b>ESP</b> bremst einzelne Räder, damit das Fahrzeug nicht schleudert</li></ul>
+<p>Alle nutzen die Signale der Raddrehzahlsensoren und denselben Hydraulikblock.</p>`},
+{titel:"Bremsflüssigkeit",html:`
+<ul><li>Hygroskopisch: sie zieht Wasser aus der Luft</li><li>Wasser senkt den Siedepunkt, es entstehen Dampfblasen und das Pedal geht durch</li><li>Wechsel alle 2 Jahre oder nach Herstellerangabe</li><li>Übliche Sorten: DOT 4 und DOT 5.1</li><li>Greift Lack an und ist giftig, gehört in den Sonderabfall</li></ul>
+<div class="merk">DOT 4 neu: Siedepunkt mindestens 230 Grad. Mit Wasser sinkt er gegen 155 Grad.</div>`},
+{titel:"Motorenöl: die fünf Aufgaben",html:`
+<h4>Merksatz</h4>
+<ul><li>Schmieren</li><li>Kühlen</li><li>Abdichten</li><li>Reinigen</li><li>Vor Korrosion schützen</li></ul>
+<p>Dazu je nach Lehrmittel: Geräusche dämpfen und Kraft übertragen.</p>
+<h4>SAE 5W-40 lesen</h4>
+<p>Die Zahl vor dem W steht für das Kaltverhalten, je kleiner desto besser der Kaltstart. Die zweite Zahl steht für die Viskosität bei 100 Grad.</p>
+<h4>Ölarten</h4>
+<ul><li>Mineralöl, teilsynthetisch, vollsynthetisch</li><li>Freigabe des Herstellers beachten, nicht nur die SAE Klasse</li><li>Diesel mit Partikelfilter braucht aschearmes Öl</li></ul>
+<div class="merk">Rote Öllampe heisst kein Öldruck. Sofort anhalten und Motor abstellen.</div>`},
+{titel:"Schmierstoffe im Rest des Fahrzeugs",html:`
+<h4>Reibungsarten</h4>
+<ul><li>Trockenreibung: Metall auf Metall, führt zum Fresser</li><li>Mischreibung: kurz beim Anfahren und Abstellen</li><li>Flüssigkeitsreibung: das Ziel, die Teile schwimmen auf dem Ölfilm</li></ul>
+<h4>Schmierungsarten</h4>
+<p>Druckumlauf im Motor, Tauchschmierung im Getriebe, Fettschmierung an Lagern, Verlustschmierung beim Zweitakter.</p>
+<h4>Welcher Stoff wohin</h4>
+<ul><li>Schaltgetriebe: Getriebeöl, zum Beispiel 75W-90, GL Klasse beachten</li><li>Automat: ATF, meist rot</li><li>Servolenkung: Hydrauliköl</li><li>Radlager und Gelenke: Fett, meist NLGI 2</li><li>Bremssattelbolzen: nur freigegebenes Bremsenfett</li></ul>
+<div class="merk">Altöl ist Sonderabfall. Ein Liter verdirbt rund eine Million Liter Wasser.</div>`},
+{titel:"Kühlmittel: die sieben Aufgaben",html:`
+<ul><li>Wärme abführen</li><li>Vor Frost schützen</li><li>Siedepunkt erhöhen</li><li>Vor Korrosion schützen</li><li>Kalkablagerungen verhindern</li><li>Wasserpumpe schmieren</li><li>Mit Dichtungen und Schläuchen verträglich sein</li></ul>
+<h4>Zahlen zum Merken</h4>
+<ul><li>Betriebstemperatur rund 90 Grad</li><li>Mischung 1 zu 1 schützt bis etwa minus 37 Grad</li><li>1,4 bar Überdruck heben den Siedepunkt auf etwa 120 Grad</li></ul>
+<h4>Kreislauf</h4>
+<p>Wasserpumpe, Motor, Thermostat, Kühler, Ausgleichsbehälter, Ventilator, Wärmetauscher der Heizung.</p>
+<div class="merk">Heissen Kühlerdeckel nie öffnen. Verbrühungsgefahr.</div>`}
+];
+
+const el=document.getElementById('app');
+let S={seite:'start',thema:'auto',name:'',modus:'lern',kats:[...KATEGORIEN],mischen:true,liste:[],i:0,antworten:[],gezeigt:false,toast:''};
+
+const mische=a=>{const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}return b};
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const gleich=(a,b)=>[...a].sort((m,n)=>m-n).join()===[...b].sort((m,n)=>m-n).join();
+const anzahl=k=>FRAGEN.filter(f=>f.k===k).length;
+const istRichtig=i=>gleich(S.antworten[i],S.liste[i].r);
+
+function starten(){
+  let l=FRAGEN.filter(f=>S.kats.includes(f.k));
+  if(S.mischen)l=mische(l);
+  S.liste=l.map(f=>{
+    if(!S.mischen)return{...f,o:[...f.o],r:[...f.r]};
+    const p=mische(f.o.map((txt,idx)=>({txt,ok:f.r.includes(idx)})));
+    return{...f,o:p.map(x=>x.txt),r:p.map((x,idx)=>x.ok?idx:-1).filter(x=>x>=0)};
+  });
+  S.i=0;S.antworten=S.liste.map(()=>[]);S.gezeigt=false;S.seite='quiz';zeichne();
+}
+
+function startSeite(){
+  const total=FRAGEN.filter(f=>S.kats.includes(f.k)).length;
+  return `<div class="wrap">
+    <div class="hero">
+      <p class="marke">Lernkontrolle Fahrzeugtechnik</p>
+      <h1>Bremsanlage, Schmierstoffe und Kühlmittel</h1>
+      <p class="lead">${FRAGEN.length} Fragen aus dem Berufsschulstoff. Am Schluss siehst du eine Auswertung mit allen Lösungen und einer Erklärung zu jedem Fehler.</p>
+    </div>
+    <div class="feld"><label for="nam">Name</label>
+      <input id="nam" type="text" placeholder="Vorname und Name" value="${esc(S.name)}" autocomplete="off"></div>
+    <div class="feld"><span class="titel">Wie willst du üben?</span>
+      <div class="tausch">
+        <button data-modus="lern" aria-pressed="${S.modus==='lern'}">Lernmodus</button>
+        <button data-modus="pruef" aria-pressed="${S.modus==='pruef'}">Prüfungsmodus</button>
+      </div>
+      <p class="hinweis">${S.modus==='lern'?'Nach jeder Frage siehst du sofort, ob es gestimmt hat.':'Keine Rückmeldung während dem Quiz. Die Lösungen kommen erst am Schluss.'}</p>
+    </div>
+    <div class="feld"><span class="titel">Themen</span>
+      <div class="katliste">${KATEGORIEN.map(k=>`<button class="katbox" data-kat="${esc(k)}" data-an="${S.kats.includes(k)}">
+        <span class="kasten">${S.kats.includes(k)?'&#10003;':''}</span><span class="nam">${esc(k)}</span><span class="anz">${anzahl(k)}</span></button>`).join('')}</div>
+    </div>
+    <div class="feld"><span class="titel">Anzeige</span>
+      <div class="tausch">
+        <button data-thema="auto" aria-pressed="${S.thema==='auto'}">Automatisch</button>
+        <button data-thema="light" aria-pressed="${S.thema==='light'}">Hell</button>
+        <button data-thema="dark" aria-pressed="${S.thema==='dark'}">Dunkel</button>
+      </div>
+      <p class="hinweis">Wenn die Schrift schlecht lesbar ist, hier auf Hell oder Dunkel stellen.</p>
+    </div>
+    <div class="feld"><span class="titel">Reihenfolge</span>
+      <div class="tausch">
+        <button data-misch="1" aria-pressed="${S.mischen}">Zufällig</button>
+        <button data-misch="0" aria-pressed="${!S.mischen}">Nach Thema</button>
+      </div>
+    </div>
+    <div style="height:140px"></div>
+  </div>
+  <div class="fuss"><div class="wrap">
+    <button class="knopf" id="los" ${total?'':'disabled'}>${total?'Quiz starten mit '+total+' Fragen':'Wähle mindestens ein Thema'}</button>
+    <button class="knopf zweit" id="zublatt">Zuerst das Lernblatt anschauen</button>
+  </div></div>`;
+}
+
+function blattSeite(){
+  return `<div class="topbar"><div class="wrap"><button class="zurueck" id="zurueck">Zurück</button><span class="kat">Lernblatt</span></div></div>
+  <div class="wrap blatt">
+    <h2>Das Wichtigste auf einen Blick</h2>
+    <p>Kurz durchlesen, dann das Quiz machen.</p>
+    ${LERNBLATT.map((k,i)=>`<div class="kapitel" data-kap="${i}" data-offen="false">
+      <button><span>${esc(k.titel)}</span><span class="pfeil">+</span></button>
+      <div class="inhalt">${k.html}</div></div>`).join('')}
+    <div style="height:40px"></div>
+  </div>
+  <div class="fuss"><div class="wrap"><button class="knopf" id="zumquiz">Zum Quiz</button></div></div>`;
+}
+
+function quizSeite(){
+  const f=S.liste[S.i],gew=S.antworten[S.i],fertig=S.gezeigt;
+  const opt=f.o.map((txt,idx)=>{
+    let st='';
+    if(fertig){ if(f.r.includes(idx))st='richtig'; else if(gew.includes(idx))st='falsch'; }
+    const z=f.t==='multi'?(gew.includes(idx)?'&#10003;':''):String.fromCharCode(65+idx);
+    return `<button class="opt" data-idx="${idx}" data-gewaehlt="${gew.includes(idx)}" ${st?`data-status="${st}"`:''} ${fertig?'disabled':''}>
+      <span class="kugel">${z}</span><span>${esc(txt)}</span></button>`;
+  }).join('');
+  const korrekt=gleich(gew,f.r), letzte=S.i===S.liste.length-1;
+  const knopf=(S.modus==='lern'&&!fertig)
+    ?`<button class="knopf" id="pruefen" ${gew.length?'':'disabled'}>Antwort prüfen</button>`
+    :`<button class="knopf" id="weiter" ${gew.length?'':'disabled'}>${letzte?'Quiz abschliessen':'Weiter'}</button>`;
+  return `<div class="topbar"><div class="wrap">
+      <span class="zaehler">${S.i+1} / ${S.liste.length}</span><span class="kat">${esc(f.k)}</span></div>
+    <div class="balken"><i style="width:${S.i/S.liste.length*100}%"></i></div></div>
+  <div class="wrap frageblock">
+    <h2 class="frage">${esc(f.f)}</h2>
+    ${f.t==='multi'?`<p class="mehrfach">Mehrere Antworten richtig (${f.r.length})</p>`:''}
+    <div class="optionen">${opt}</div>
+    ${fertig?`<div class="erklaerung"><b>${korrekt?'Richtig':'Nicht ganz'}</b>${esc(f.e)}${f.w?`<span class="funk">${esc(f.w)}</span>`:''}</div>`:''}
+  </div>
+  <div class="fuss"><div class="wrap">${knopf}</div></div>`;
+}
+
+function resultSeite(){
+  const n=S.liste.length, p=S.liste.reduce((s,f,i)=>s+(istRichtig(i)?1:0),0);
+  const proz=Math.round(p/n*100);
+  const note=(Math.round((1+5*p/n)*2)/2).toFixed(1);
+  const urteil=proz>=90?'Sehr stark, das sitzt.':proz>=75?'Gut. Ein paar Lücken sind noch da.':proz>=50?'Grundlagen sind da, jetzt nachbüffeln.':'Da geht noch was. Nimm das Lernblatt und mach nochmals eine Runde.';
+  const kats=[...new Set(S.liste.map(f=>f.k))];
+  const stat=kats.map(k=>{
+    const idx=S.liste.map((f,i)=>f.k===k?i:-1).filter(i=>i>=0);
+    const ok=idx.filter(istRichtig).length;
+    return `<div><div class="zeile"><span>${esc(k)}</span><span>${ok} von ${idx.length}</span></div>
+      <div class="spur"><i style="width:${ok/idx.length*100}%"></i></div></div>`;
+  }).join('');
+
+  const falsch=S.liste.map((f,i)=>({f,i})).filter(x=>!istRichtig(x.i));
+  const richtig=S.liste.map((f,i)=>({f,i})).filter(x=>istRichtig(x.i));
+
+  const falschHtml=falsch.length?falsch.map(({f,i})=>{
+    const meine=S.antworten[i].length?S.antworten[i].map(x=>f.o[x]).join(', '):'Keine Antwort';
+    return `<div class="karte-falsch">
+      <div class="nr">Frage ${i+1} &middot; ${esc(f.k)}</div>
+      <div class="fr">${esc(f.f)}</div>
+      <div class="zl"><span class="lb">Deine Antwort</span><span class="falschtext">${esc(meine)}</span></div>
+      <div class="zl"><span class="lb">Richtig ist</span><span class="richtigtext">${esc(f.r.map(x=>f.o[x]).join(', '))}</span></div>
+      <div class="zl"><span class="lb">Warum</span>${esc(f.e)}</div>
+      ${f.w?`<div class="zl erkl"><span class="lb">Was das bedeutet</span>${esc(f.w)}</div>`:''}
+    </div>`;
+  }).join(''):'<p class="leer">Nichts falsch. Sauber gearbeitet.</p>';
+
+  const richtigHtml=richtig.map(({f,i})=>`<div class="eintrag" data-nr="${i}" data-offen="false">
+    <button><span class="zeichen j">&#10003;</span><span>${i+1}. ${esc(f.f)}</span></button>
+    <div class="detail"><div class="zl"><span class="lb">Deine Antwort</span><span class="richtigtext">${esc(S.antworten[i].map(x=>f.o[x]).join(', '))}</span></div>
+      <div class="zl erkl">${esc(f.e)}</div></div></div>`).join('')||'<p class="leer">Noch keine richtige Antwort.</p>';
+
+  return `<div class="wrap">
+    <div class="resultkopf">
+      <div class="punkte">${p}<span> / ${n}</span></div>
+      <div class="prozent">${proz} Prozent richtig</div>
+      <div class="urteil">${esc(S.name?S.name+', '+urteil.charAt(0).toLowerCase()+urteil.slice(1):urteil)}</div>
+      <div class="note">Entspricht etwa Note ${note}</div>
+    </div>
+    <div class="katstat">${stat}</div>
+    <div class="abschnitt">
+      <h3>Das musst du nochmals anschauen</h3>
+      <p class="sub">${falsch.length} von ${n} Fragen falsch</p>
+      ${falschHtml}
+    </div>
+    <div class="abschnitt">
+      <h3>Richtig beantwortet</h3>
+      <p class="sub">${richtig.length} Fragen, antippen zum Nachlesen</p>
+      ${richtigHtml}
+    </div>
+    <div style="height:170px"></div>
+  </div>
+  <div class="fuss"><div class="wrap">
+    <button class="knopf" id="nochmal" ${falsch.length?'':'disabled'}>Nur die falschen nochmals</button>
+    <button class="knopf zweit" id="kopieren">Ergebnis als Text kopieren</button>
+    <button class="knopf zweit" id="neu">Zurück zum Start</button>
+  </div></div>
+  ${S.toast?`<div class="toast">${esc(S.toast)}</div>`:''}`;
+}
+
+function ergebnisText(){
+  const n=S.liste.length,p=S.liste.reduce((s,f,i)=>s+(istRichtig(i)?1:0),0);
+  let t=`Werkstattquiz${S.name?' von '+S.name:''}\nResultat: ${p} von ${n} (${Math.round(p/n*100)} Prozent)\n`;
+  const falsch=S.liste.map((f,i)=>({f,i})).filter(x=>!istRichtig(x.i));
+  if(falsch.length){
+    t+=`\nFalsch beantwortet:\n`;
+    falsch.forEach(({f,i})=>{
+      t+=`\n${i+1}. ${f.f}\nSeine Antwort: ${S.antworten[i].map(x=>f.o[x]).join(', ')||'keine'}\nRichtig: ${f.r.map(x=>f.o[x]).join(', ')}\n`;
+    });
+  } else t+=`\nAlles richtig.\n`;
+  return t;
+}
+
+function zeichne(){
+  document.documentElement.dataset.theme = S.thema==='auto'?'':S.thema;
+  el.innerHTML = S.seite==='start'?startSeite():S.seite==='blatt'?blattSeite():S.seite==='quiz'?quizSeite():resultSeite();
+  if(S.seite!=='result')window.scrollTo(0,0);
+  binde();
+}
+
+function binde(){
+  if(S.seite==='start'){
+    el.querySelector('#nam').addEventListener('input',e=>{S.name=e.target.value});
+    el.querySelectorAll('[data-modus]').forEach(b=>b.onclick=()=>{S.modus=b.dataset.modus;zeichne()});
+    el.querySelectorAll('[data-thema]').forEach(b=>b.onclick=()=>{S.thema=b.dataset.thema;zeichne()});
+    el.querySelectorAll('[data-misch]').forEach(b=>b.onclick=()=>{S.mischen=b.dataset.misch==='1';zeichne()});
+    el.querySelectorAll('[data-kat]').forEach(b=>b.onclick=()=>{
+      const k=b.dataset.kat;
+      S.kats=S.kats.includes(k)?S.kats.filter(x=>x!==k):[...S.kats,k];zeichne();
+    });
+    el.querySelector('#los').onclick=starten;
+    el.querySelector('#zublatt').onclick=()=>{S.seite='blatt';zeichne()};
+  }
+  if(S.seite==='blatt'){
+    el.querySelector('#zurueck').onclick=()=>{S.seite='start';zeichne()};
+    el.querySelector('#zumquiz').onclick=starten;
+    el.querySelectorAll('.kapitel > button').forEach(b=>b.onclick=()=>{
+      const k=b.parentElement, offen=k.dataset.offen==='true';
+      k.dataset.offen=offen?'false':'true';
+      b.querySelector('.pfeil').innerHTML=offen?'+':'&minus;';
+    });
+  }
+  if(S.seite==='quiz'){
+    const f=S.liste[S.i];
+    el.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
+      const idx=+b.dataset.idx, a=S.antworten[S.i];
+      S.antworten[S.i]=f.t==='multi'?(a.includes(idx)?a.filter(x=>x!==idx):[...a,idx]):[idx];
+      zeichne();
+    });
+    const pr=el.querySelector('#pruefen'); if(pr)pr.onclick=()=>{S.gezeigt=true;zeichne()};
+    const we=el.querySelector('#weiter'); if(we)we.onclick=()=>{
+      if(S.i===S.liste.length-1){S.seite='result';S.toast='';}
+      else{S.i++;S.gezeigt=false;}
+      zeichne();
+    };
+  }
+  if(S.seite==='result'){
+    el.querySelectorAll('.eintrag > button').forEach(b=>b.onclick=()=>{
+      const box=b.parentElement;box.dataset.offen=box.dataset.offen==='true'?'false':'true';
+    });
+    el.querySelector('#neu').onclick=()=>{S.seite='start';S.toast='';zeichne()};
+    const nm=el.querySelector('#nochmal');
+    if(nm)nm.onclick=()=>{
+      const rest=S.liste.filter((f,i)=>!istRichtig(i));
+      if(!rest.length)return;
+      S.liste=rest;S.antworten=rest.map(()=>[]);S.i=0;S.gezeigt=false;S.seite='quiz';S.toast='';zeichne();
+    };
+    el.querySelector('#kopieren').onclick=async()=>{
+      const t=ergebnisText();
+      try{await navigator.clipboard.writeText(t);}
+      catch(e){
+        const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);
+        ta.select();try{document.execCommand('copy')}catch(x){}document.body.removeChild(ta);
+      }
+      S.toast='Ergebnis kopiert. Jetzt in WhatsApp oder Mail einfügen.';zeichne();
+      setTimeout(()=>{if(S.seite==='result'){S.toast='';zeichne()}},2600);
+    };
+  }
+}
+zeichne();
+</script>
+</body>
+</html>
