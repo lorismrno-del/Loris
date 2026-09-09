@@ -1,0 +1,16 @@
+{
+  "name": "sirat-talk-intro",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "8s Logo Intro fuer Sirat Talk – eine HTML-Datei, SVG + CSS Keyframes, Export als MP4.",
+  "scripts": {
+    "render": "node render.mjs",
+    "render:30": "node render.mjs --fps 30",
+    "render:4k": "node render.mjs --scale 2 --out sirat-talk-intro-4k.mp4",
+    "frames": "node render.mjs --png-only"
+  },
+  "devDependencies": {
+    "playwright": "^1.49.0"
+  }
+}
