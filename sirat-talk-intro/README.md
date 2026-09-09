@@ -56,38 +56,30 @@ ffmpeg -y -framerate 60 -start_number 0 -i .frames/f_%04d.png \
 
 ## Timeline
 
+Eine einzige Geste: der Weg aus dem Logo zeichnet sich groß über das Bild, fährt
+in einer Bewegung auf seine Größe im Logo zurück, und das Logo wächst aus ihm
+heraus. Keine Streuelemente, kein Blitz.
+
 Alle Animationen hängen an **einer** Master-Dauer (`--dur: 8s`); die komplette
 Timeline steckt in den Keyframe-Prozenten, damit nichts auseinanderläuft.
 
 | Zeit | Was passiert |
 |---|---|
-| 0,00 s | Das Bild startet **leer**. Kein Element ist vorher da. |
-| 0,16 – 1,72 s | Neun Elemente (Wellenlinie, Strich, Punkt, Kreisumriss, Kreuz, in zwei Größen) tauchen nacheinander auf, je 0,13 s Versatz. Deckkraft echt von 0 auf 100, dazu blur 10px → 0 und Scale 1,4 → 1, `cubic-bezier(.16,1,.3,1)` |
-| 1,5 – 3,0 s | Die Elemente driften Richtung Mitte. Jedes läuft auf einer eigenen Bahn und **dreht sich dabei automatisch in seine Bewegungsrichtung** (`offset-rotate: auto`). Kamera zoomt 1,0 → 1,06 |
-| 3,0 – 4,75 s | Der Weg zeichnet sich als weiße S-Kurve von unten links nach oben (`stroke-dasharray`, ease-in-out), 6px → 16px. Ein **Strich reitet auf der Linienspitze** und führt sie; die übrigen Elemente ordnen sich links und rechts am Weg an |
-| 4,75 – 5,25 s | Der Strich legt sich per `d`-Morph **genau auf den Weg im Logo**. Quelle und Ziel haben denselben Aufbau (M + 3 C), also interpoliert die Kurve Punkt für Punkt. Der Leitstrich landet am Anfang dieses Wegs |
-| 5,16 – 5,48 s | Weißer Flash (0 → 1 → 0), Hintergrund schaltet im Scheitel hart auf Weiß |
-| 5,40 – 6,40 s | Logoaufbau: die rote Blase wächst mit Overshoot **aus genau diesem Weg** heraus (Scale 0,6 → 1) — die weiße Aussparung der Blase ist der gelandete Strich. „SIRAT" wird per `clip-path` von links nach rechts freigelegt (0,4 s), „TALK" fährt 0,15 s später 30px von links ein |
-| 5,42 – 6,55 s | Die kleinen Elemente fliegen in Rot durch die Mitte nach außen und blenden aus — versetzt, jedes auf seiner Bahn weiter, ohne Richtungsknick |
-| 6,6 – 8,0 s | Nachfedern Scale 1,02 → 1,0, letzte 0,5 s ruhig |
+| 0,00 – 0,40 s | Dunkles Bild, leer |
+| 0,40 – 3,30 s | Der Weg zeichnet sich groß über das Bild (`stroke-dasharray`, ein langer ease-in-out). Es ist **exakt die Kurve des Wegs im Logo**, nur 5,25-fach — deshalb ist die Landung später eine reine Bewegung und kein Formwechsel |
+| 3,20 – 4,30 s | Er fährt in einer Bewegung auf seine Größe im Logo zurück |
+| 3,70 – 4,15 s | Ein weißer Wisch mit schräger Kante läuft durchs Bild, unten voraus wie die Fahrtrichtung des Wegs. Er kommt, **solange die Linie noch Größe hat** — sie steht nie klein und allein im leeren Bild |
+| 4,10 – 5,05 s | Die rote Blase wächst aus dem Weg heraus (Scale 0,62 → 1, minimaler Overshoot). Die weiße Aussparung der Blase *ist* die gelandete Linie |
+| 4,72 – 5,28 s | „SIRAT" wird per `clip-path` von links nach rechts freigelegt |
+| 5,02 – 5,65 s | „TALK" fährt 30px von links ein und blendet auf |
+| 5,65 – 6,70 s | Nachfedern Scale 1,02 → 1,0 |
+| 6,70 – 8,00 s | Ruhe |
 
-Hintergrund startet auf `#2B0507` und wechselt im Flash-Peak hart auf Weiß –
-so entsteht kein Verlauf durch Zwischenfarben.
+Die Überlappungen sind Absicht: keine Bewegung kommt zum Stillstand, bevor die
+nächste anfängt. Es laufen insgesamt sieben Animationen — die Bühne bleibt lesbar.
 
-### Wie die Elemente bewegt werden
-
-Jedes Element steckt in drei ineinander liegenden Gruppen, damit jede Ebene ihr
-eigenes Easing bekommt:
-
-| Ebene | Aufgabe |
-|---|---|
-| `.eo` | Deckkraft und Farbe — der echte Übergang von 0 auf 100 |
-| `.ep` | die Reise: `offset-path` mit der eigenen Bahn des Elements, `offset-distance` animiert, `offset-rotate: auto` dreht in Bewegungsrichtung |
-| `.es` | Auftauch-Scale und Bewegungsunschärfe |
-
-Die Bahnen sind zentripetale Catmull-Rom-Splines durch Start → Drift → Position
-am Weg → Mitte → Ausgang. Weil jedes Element **durch** die Mitte fliegt statt
-dort umzukehren, gibt es beim Rausgehen keinen Richtungsknick.
+Der Hintergrundwechsel ist ein Wisch mit harter Kante, kein Blitz und keine
+Überblendung. So entstehen keine Zwischenfarben.
 
 ## Logo
 
@@ -96,19 +88,13 @@ Das Logo ist **unverändert**. Es wurde aus der Vorlage in Pfade übernommen
 `logo.svg` bei. Der Endframe des Intros deckt sich mit dem statisch gerenderten
 Logo bis auf Kantenglättung (< 0,01 % abweichende Pixel).
 
-Der weiße Weg im Logo ist die Blasenspitze – im Intro ist er das Leitmotiv:
-er wird gezeichnet, legt sich per Morph exakt auf den Weg im Logo, und die Blase
-wächst genau aus ihm heraus. Die Ziel-Kurve wurde aus der Weg-Fläche im Logo
-gemessen (Mittellinie), nicht geschätzt: mittlere Abweichung 1,8px bei 1024px
-Vorlagenbreite, 595 von 600 Kurvenpunkten liegen innerhalb der Weg-Fläche.
-
-### Browser
-
-Die Datei nutzt zwei neuere CSS-Bausteine: `offset-path` / `offset-rotate`
-(Motion Path) für die Bahnen und die Animation der `d`-Eigenschaft für den
-Übergang vom Strich zum Weg im Logo. Beides trägt in Chromium und Firefox;
-gerendert wird ohnehin mit Chromium. In älteren Browsern springt der Morph
-statt zu interpolieren — der Flash deckt die Stelle ab.
+Der weiße Weg im Logo ist die Blasenspitze – im Intro ist er das Leitmotiv.
+Die animierte Linie ist **dieselbe Kurve**, nur groß: sie wurde aus der
+Weg-Fläche im Logo gemessen (Mittellinie), nicht geschätzt — mittlere Abweichung
+1,8px bei 1024px Vorlagenbreite, 595 von 600 Kurvenpunkten liegen innerhalb der
+Weg-Fläche. Weil Anfangs- und Endzustand dieselbe Kurve sind, ist die Landung
+eine reine Transformation: kein Morph, keine exotischen CSS-Eigenschaften,
+nichts, was in einem Browser anders interpoliert.
 
 ## Farben
 
