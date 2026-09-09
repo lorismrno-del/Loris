@@ -1,4 +1,4 @@
-# Sirat Talk – 8 s Logo Intro
+# Sirat Talk – 12 s Logo Intro
 
 Eine einzelne HTML-Datei, SVG + CSS-Keyframes, 1920 × 1080, gedacht für 60 fps.
 Kein Framework, keine externen Fonts, keine externen Assets – alles inline.
@@ -28,13 +28,13 @@ npx playwright install chromium
 node render.mjs
 ```
 
-→ `sirat-talk-intro.mp4`, 1920 × 1080, 60 fps, exakt 8,000 s, H.264 / CRF 16.
+→ `sirat-talk-intro.mp4`, 1920 × 1080, 60 fps, exakt 12,000 s, H.264 / CRF 16.
 
 Optionen:
 
 | Befehl | Ergebnis |
 |---|---|
-| `node render.mjs --fps 30` | 30 fps (240 Frames) |
+| `node render.mjs --fps 30` | 30 fps (360 Frames) |
 | `node render.mjs --scale 2 --out intro-4k.mp4` | 3840 × 2160 |
 | `node render.mjs --png-only` | nur die PNG-Sequenz in `.frames/` |
 | `node render.mjs --keep-frames` | MP4 **und** PNG-Sequenz behalten |
@@ -56,27 +56,43 @@ ffmpeg -y -framerate 60 -start_number 0 -i .frames/f_%04d.png \
 
 ## Timeline
 
-Eine einzige Geste: der Weg aus dem Logo zeichnet sich groß über das Bild, fährt
-in einer Bewegung auf seine Größe im Logo zurück, und das Logo wächst aus ihm
-heraus. Keine Streuelemente, kein Blitz.
+Der Weg ist nicht als Strich gezeichnet — es ist die **echte Weg-Fläche aus dem
+Logo**: perspektivisch verjüngt, vorne breit, hinten schmal. Sie rollt sich vom
+Betrachter zum Horizont aus, die Kamera fährt dabei zurück und richtet sich auf,
+bis der Weg genau seine Größe und Lage im Logo hat. Dann wächst das Logo aus ihm.
 
-Alle Animationen hängen an **einer** Master-Dauer (`--dur: 8s`); die komplette
+Alle Animationen hängen an **einer** Master-Dauer (`--dur: 12s`); die komplette
 Timeline steckt in den Keyframe-Prozenten, damit nichts auseinanderläuft.
 
 | Zeit | Was passiert |
 |---|---|
-| 0,00 – 0,40 s | Dunkles Bild, leer |
-| 0,40 – 3,30 s | Der Weg zeichnet sich groß über das Bild (`stroke-dasharray`, ein langer ease-in-out). Es ist **exakt die Kurve des Wegs im Logo**, nur 5,25-fach — deshalb ist die Landung später eine reine Bewegung und kein Formwechsel |
-| 3,20 – 4,30 s | Er fährt in einer Bewegung auf seine Größe im Logo zurück |
-| 3,70 – 4,15 s | Ein weißer Wisch mit schräger Kante läuft durchs Bild, unten voraus wie die Fahrtrichtung des Wegs. Er kommt, **solange die Linie noch Größe hat** — sie steht nie klein und allein im leeren Bild |
-| 4,10 – 5,05 s | Die rote Blase wächst aus dem Weg heraus (Scale 0,62 → 1, minimaler Overshoot). Die weiße Aussparung der Blase *ist* die gelandete Linie |
-| 4,72 – 5,28 s | „SIRAT" wird per `clip-path` von links nach rechts freigelegt |
-| 5,02 – 5,65 s | „TALK" fährt 30px von links ein und blendet auf |
-| 5,65 – 6,70 s | Nachfedern Scale 1,02 → 1,0 |
-| 6,70 – 8,00 s | Ruhe |
+| 0,00 – 0,20 s | Dunkles Bild, leer. Die Kamera fährt bereits |
+| 0,20 – 4,60 s | Der Weg rollt sich vom Betrachter zum Horizont aus (`clip-path`-Rechteck, `scaleY` von unten) |
+| 0,50 – 7,05 s | Die Markierungen laufen auf den Betrachter zu. Konstante Straßengeschwindigkeit, die zum Schluss ausrollt |
+| 0,20 – 6,00 s | Kamera fährt zurück, Maßstab 15,0 → 4,95, um −24° gekippt |
+| 6,00 – 7,05 s | Der Weg fährt auf Logo-Größe und richtet sich auf |
+| 6,35 – 6,95 s | Weißer Wisch mit schräger Kante, unten voraus wie die Fahrtrichtung. Er kommt, **solange der Weg noch Größe hat** — der Weg steht nie klein und allein im leeren Bild. Er deckt Weg und Markierungen ab, die müssen also nicht extra ausgeblendet werden |
+| 6,88 – 8,25 s | Die rote Blase wächst aus dem Weg (Scale 0,62 → 1, minimaler Overshoot). Das Logo liegt in derselben Kamera, kommt also mit ihrer letzten Bewegung zur Ruhe |
+| 7,95 – 8,65 s | „SIRAT" wird per `clip-path` von links nach rechts freigelegt |
+| 8,40 – 9,30 s | „TALK" fährt 30px von links ein und blendet auf |
+| 9,30 – 10,60 s | Nachfedern Scale 1,02 → 1,0 |
+| 10,60 – 12,00 s | Ruhe |
 
 Die Überlappungen sind Absicht: keine Bewegung kommt zum Stillstand, bevor die
-nächste anfängt. Es laufen insgesamt sieben Animationen — die Bühne bleibt lesbar.
+nächste anfängt. Gemessen über alle 720 Frames bleiben nur zwei Standbilder
+übrig, beide gewollt: der leere Auftakt (0,28 s) und die Schlussruhe (1,67 s).
+
+### Aufbau
+
+```
+#camA   ← der Weg (Fläche + Markierungen)
+#wipe   ← weißer Wisch, Bildschirmraum, liegt zwischen den Kameras
+#camB   ← das Logo
+```
+
+`#camA` und `#camB` tragen dieselbe Kamera-Animation. Zwei Gruppen sind nötig,
+weil der Wisch dazwischen liegen muss: er gehört in den Bildschirmraum, nicht in
+die Kamera. Läge er über beiden, verdeckte er das Logo dauerhaft.
 
 Der Hintergrundwechsel ist ein Wisch mit harter Kante, kein Blitz und keine
 Überblendung. So entstehen keine Zwischenfarben.
@@ -89,12 +105,13 @@ Das Logo ist **unverändert**. Es wurde aus der Vorlage in Pfade übernommen
 Logo bis auf Kantenglättung (< 0,01 % abweichende Pixel).
 
 Der weiße Weg im Logo ist die Blasenspitze – im Intro ist er das Leitmotiv.
-Die animierte Linie ist **dieselbe Kurve**, nur groß: sie wurde aus der
-Weg-Fläche im Logo gemessen (Mittellinie), nicht geschätzt — mittlere Abweichung
-1,8px bei 1024px Vorlagenbreite, 595 von 600 Kurvenpunkten liegen innerhalb der
-Weg-Fläche. Weil Anfangs- und Endzustand dieselbe Kurve sind, ist die Landung
-eine reine Transformation: kein Morph, keine exotischen CSS-Eigenschaften,
-nichts, was in einem Browser anders interpoliert.
+Die animierte Fläche ist **dieselbe Fläche**, nur groß und gekippt: aus der
+Vorlage getract, eine geschlossene Kurve. Die Markierungen laufen auf ihrer
+gemessenen Mittellinie (mittlere Abweichung 1,8px bei 1024px Vorlagenbreite).
+
+Weil Anfangs- und Endzustand dieselbe Geometrie sind, ist die Landung eine reine
+Transformation: kein Morph, keine exotischen CSS-Eigenschaften, nichts, was in
+einem Browser anders interpoliert.
 
 ## Farben
 
