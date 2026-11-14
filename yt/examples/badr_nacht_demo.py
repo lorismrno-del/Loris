@@ -115,6 +115,75 @@ def beams(f, t, a):
     lay = cv2.resize(cv2.GaussianBlur(lay, (0, 0), 14), (W, H))[..., None] * a
     return np.clip(f.astype(np.float32) + lay * np.float32([255, 238, 200]) * 0.9, 0, 255).astype(np.uint8)
 
+
+def night_ground(f, y0=760, col=(34, 28, 40)):
+    xs = np.arange(0, W + 20, 20)
+    ys = y0 + 18 * np.sin(xs * 0.004 + 1.2) + 8 * np.sin(xs * 0.011)
+    pts = np.array([(0, H)] + list(zip(xs, ys.astype(int))) + [(W, H)], np.int32)
+    cv2.fillPoly(f, [pts], col, cv2.LINE_AA)
+
+def moon(f, x, y, r=46):
+    g = np.exp(-(((xx_ - x) / (r * 3.2)) ** 2 + ((yy_ - y) / (r * 3.2)) ** 2))[..., None]
+    f[:] = np.clip(f.astype(np.float32) + g * np.float32([150, 160, 210]) * 0.35, 0, 255).astype(np.uint8)
+    cv2.circle(f, (x, y), r, (236, 236, 250), -1, cv2.LINE_AA)
+
+def tent(f, x, y, s, col=(70, 58, 72)):
+    pts = np.array([(x - 90 * s, y), (x, y - 85 * s), (x + 90 * s, y)], np.int32)
+    cv2.fillPoly(f, [pts], col, cv2.LINE_AA)
+    cv2.fillPoly(f, [np.array([(x - 14 * s, y), (x, y - 40 * s), (x + 14 * s, y)], np.int32)], (20, 16, 26), cv2.LINE_AA)
+
+def sleeper(f, x, y, s, t, i):
+    b = 1 + 0.05 * math.sin(t * 1.4 + i)
+    cv2.circle(f, (int(x - 40 * s), int(y - 6 * s)), int(10 * s), (120, 110, 125), -1, cv2.LINE_AA)       # Kopf mit Turban
+    cv2.ellipse(f, (int(x - 40 * s), int(y - 11 * s)), (int(11 * s), int(6 * s)), 0, 180, 360, (215, 210, 220), -1, cv2.LINE_AA)
+    cv2.ellipse(f, (int(x), int(y - 2 * s)), (int(36 * s), int(13 * s * b)), 0, 180, 360, (175, 160, 150), -1, cv2.LINE_AA)  # Decke
+    cv2.line(f, (int(x - 30 * s), int(y)), (int(x + 36 * s), int(y)), (175, 160, 150), max(1, int(3 * s)), cv2.LINE_AA)
+    cv2.line(f, (int(x - 10 * s), int(y - 10 * s * b)), (int(x + 20 * s), int(y - 6 * s * b)), (140, 125, 120), 2, cv2.LINE_AA)
+
+def camp_night(t):
+    f = night_bg(t).copy()
+    moon(f, 1720, 140, 40)
+    night_ground(f)
+    for i, (x, s) in enumerate([(220, 1.6), (560, 1.2), (1300, 1.3), (1660, 1.7)]):
+        tent(f, x, 785, s)
+    for i in range(14):
+        x = 380 + (i % 7) * 170 + (i // 7) * 60
+        y = 860 + (i // 7) * 70
+        sleeper(f, x, y, 1.3 + (i // 7) * 0.2, t, i)
+    return f
+
+MOTES = np.random.default_rng(9).uniform(0, 1, (90, 3))
+def prayer_night(t):
+    f = night_bg(t).copy()
+    night_ground(f, 800, (24, 20, 30))
+    hx, hy = 520, 790
+    cv2.fillPoly(f, [np.array([(hx - 110, hy), (hx - 95, hy - 120), (hx + 95, hy - 120), (hx + 110, hy)], np.int32)], (14, 12, 18), cv2.LINE_AA)
+    k = 0.75 + 0.15 * math.sin(t * 7) + 0.1 * math.sin(t * 13)
+    g = np.exp(-(((xx_ - hx) / 180) ** 2 + ((yy_ - (hy - 50)) / 140) ** 2))[..., None]
+    f = np.clip(f.astype(np.float32) + g * np.float32([255, 170, 80]) * 0.55 * k, 0, 255).astype(np.uint8)
+    cv2.rectangle(f, (hx - 40, hy - 80), (hx + 40, hy), (255, 190, 110), -1)
+    for x0, y0, s in MOTES:
+        y = hy - 60 - ((t * (25 + 40 * s) + y0 * 700) % 700)
+        x = hx + (x0 - 0.5) * 220 + 25 * math.sin(t * 0.8 + y0 * 9)
+        a = max(0.0, 1 - (hy - 60 - y) / 700)
+        cv2.circle(f, (int(x), int(y)), 2 + int(2 * s), (int(255 * a), int(220 * a), int(150 * a)), -1, cv2.LINE_AA)
+    return f
+
+LIGHTS = np.random.default_rng(4).uniform(0, 1, (1000, 3))
+def angels_dawn(t, t0):
+    f = sky((60, 70, 140), (250, 170, 130), 0.66).copy()
+    f = np.clip(f, 0, 255).astype(np.uint8)
+    night_ground(f, 760, (95, 70, 70))
+    f = beams(f, t, ss(t0, t0 + 1.5, t) * 0.45)
+    u = t - t0
+    for i, (x0, y0, s) in enumerate(LIGHTS):
+        st = (i / 1000.0) * 3.0
+        if u < st: continue
+        p = min(1.0, (u - st) / 2.5)
+        x = 200 + x0 * 1520; y = -20 + (300 + y0 * 380) * eio(p)
+        cv2.circle(f, (int(x), int(y)), 2, (255, 250, 230), -1, cv2.LINE_AA)
+    return cv2.addWeighted(f, 1.0, cv2.GaussianBlur(f, (0, 0), 5), 0.4, 0)
+
 Q811 = '„Als Er Schläfrigkeit über euch kommen liess als Sicherheit von Ihm und Wasser vom Himmel auf euch herabsandte, um euch damit zu reinigen und eure Füsse damit zu festigen.“ (sinngemäss)'
 QM = '„O Allah, erfülle mir, was Du mir versprochen hast. O Allah, wenn diese kleine Schar untergeht, wirst Du auf der Erde nicht mehr angebetet.“'
 Q89 = '„Ich werde euch mit tausend Engeln unterstützen, die einander folgen.“'
@@ -125,25 +194,29 @@ def scene(t):
         ti = C('t_br', lambda: glow_text('Die Brunnen von Badr', cinzel(66), fill=(120, 70, 30), glow=False))
         overlay(f, ti, W // 2 - ti.shape[1] // 2, 60, ss(0.3, 0.8, t))
         return f, None
-    if t < 17.8:                                  # Nacht, Regen: kühle Farbwelt
-        u = (t - 3.3) / 14.5
-        f = kb(gimg('rain', NIGHT, 0.4), u, 1.0, 1.1, (0.4, 0.55), (0.45, 0.55))
-        f = rain(f, t)
+    if t < 10.0:                                  # BILD: Nacht, Regen
+        u = (t - 3.3) / 6.7
+        f = kb(gimg('rain', NIGHT, 0.4), u, 1.0, 1.06, (0.4, 0.55), (0.43, 0.55))
+        return rain(f, t), None
+    if t < 17.8:                                  # ANIMATION: ruhiges Lager, Schlaf
+        f = rain(camp_night(t), t, 0.25 * (1 - ss(10.0, 13.0, t)))
         q = C('q811', lambda: quote_card(Q811, 'Sure Al Anfal 8:11'))
-        a = min(ss(6.8, 7.3, t), 1 - ss(17.3, 17.8, t))
-        overlay(f, q, W // 2 - q.shape[1] // 2, 200, a)
+        a = min(ss(10.4, 10.9, t), 1 - ss(17.3, 17.8, t))
+        overlay(f, q, W // 2 - q.shape[1] // 2, 150, a)
         return f, ('Sure Al Anfal 8:11', a)
-    if t < 39.0:                                  # Nacht, Gebet: warmes Lampenlicht im Dunkeln
-        u = (t - 17.8) / 21.2
-        z0, z1, c0, c1 = 1.0, 1.14, (0.3, 0.55), (0.24, 0.58)
+    if t < 29.9:                                  # BILD: Hütte, Lampenlicht
+        u = (t - 17.8) / 12.1
+        z0, z1, c0, c1 = 1.0, 1.1, (0.3, 0.55), (0.25, 0.57)
         f = kb(gimg('hut', NIGHT, 0.25), u, z0, z1, c0, c1)
-        e = eio(u); s = z0 + (z1 - z0) * e
+        e = eio(u); s_ = z0 + (z1 - z0) * e
         cx = (c0[0] + (c1[0] - c0[0]) * e) * W; cy = (c0[1] + (c1[1] - c0[1]) * e) * H
-        cx = min(max(cx, W / 2 / s), W - W / 2 / s); cy = min(max(cy, H / 2 / s), H - H / 2 / s)
-        f = lamp(f, t, W / 2 + (0.188 * W - cx) * s, H / 2 + (0.53 * H - cy) * s)
+        cx = min(max(cx, W / 2 / s_), W - W / 2 / s_); cy = min(max(cy, H / 2 / s_), H - H / 2 / s_)
+        return lamp(f, t, W / 2 + (0.188 * W - cx) * s_, H / 2 + (0.53 * H - cy) * s_), None
+    if t < 39.0:                                  # ANIMATION: Bittgebet, Licht steigt auf
+        f = prayer_night(t)
         q = C('qm', lambda: quote_card(QM, 'Sahih Muslim 1763'))
-        a = min(ss(29.9, 30.4, t), 1 - ss(38.5, 39.0, t))
-        overlay(f, q, W // 2 - q.shape[1] // 2 + 200, 180, a)
+        a = min(ss(30.0, 30.5, t), 1 - ss(38.5, 39.0, t))
+        overlay(f, q, W // 2 - q.shape[1] // 2 + 220, 170, a)
         return f, ('Sahih Muslim 1763', a)
     if t < 46.9:                                  # Nacht geht in Morgengrauen über: Bild wird wärmer
         u = (t - 39.0) / 7.9
@@ -151,15 +224,13 @@ def scene(t):
         d = kb(gimg('hut', DAWN, 0.35, 1.1), u, 1.14, 1.2, (0.4, 0.5), (0.6, 0.45))
         k = ss(39.5, 46.9, t) * 0.7
         return cv2.addWeighted(n, 1 - k, d, k, 0), None
-    u = (t - 46.9) / (DUR - 46.9)                 # Engel: Morgen, Licht von oben
-    f = kb(gimg('dust', DAWN, 0.3, 1.05), u, 1.0, 1.08, (0.6, 0.4), (0.62, 0.36))
-    f = beams(f, t, ss(47.0, 48.5, t) * 0.7)
+    f = angels_dawn(t, 46.9)                      # ANIMATION: Engel, Morgenlicht
     q = C('q89', lambda: quote_card(Q89, 'Sure Al Anfal 8:9', w=1000))
     a = ss(48.6, 49.1, t)
-    overlay(f, q, W // 2 - q.shape[1] // 2, 330, a)
+    overlay(f, q, W // 2 - q.shape[1] // 2, 520, a)
     return f, ('Sure Al Anfal 8:9', a)
 
-TRS = [3.3, 17.8, 39.0, 46.9]
+TRS = [3.3, 10.0, 17.8, 29.9, 39.0, 46.9]
 def frame(t):
     f, src = scene(t)
     for tr in TRS:
