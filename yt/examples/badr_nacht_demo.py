@@ -186,6 +186,12 @@ def angels_dawn(t, t0):
 
 Q811 = '„Als Er Schläfrigkeit über euch kommen liess als Sicherheit von Ihm und Wasser vom Himmel auf euch herabsandte, um euch damit zu reinigen und eure Füsse damit zu festigen.“ (sinngemäss)'
 QM = '„O Allah, erfülle mir, was Du mir versprochen hast. O Allah, wenn diese kleine Schar untergeht, wirst Du auf der Erde nicht mehr angebetet.“'
+QPOS = {'qm': ('center', 220, 170), 'q89': ('center', 0, 520)}   # (anchor, dx, y); overridable
+
+def qx(q, key):
+    anc, dx, _ = QPOS[key]
+    return (W - q.shape[1] - 60) if anc == 'right' else (W // 2 - q.shape[1] // 2 + dx)
+
 Q89 = '„Ich werde euch mit tausend Engeln unterstützen, die einander folgen.“'
 
 def scene(t):
@@ -216,7 +222,7 @@ def scene(t):
         f = prayer_night(t)
         q = C('qm', lambda: quote_card(QM, 'Sahih Muslim 1763'))
         a = min(ss(30.0, 30.5, t), 1 - ss(38.5, 39.0, t))
-        overlay(f, q, W // 2 - q.shape[1] // 2 + 220, 170, a)
+        overlay(f, q, qx(q, 'qm'), QPOS['qm'][2], a)
         return f, ('Sahih Muslim 1763', a)
     if t < 46.9:                                  # Nacht geht in Morgengrauen über: Bild wird wärmer
         u = (t - 39.0) / 7.9
@@ -227,7 +233,7 @@ def scene(t):
     f = angels_dawn(t, 46.9)                      # ANIMATION: Engel, Morgenlicht
     q = C('q89', lambda: quote_card(Q89, 'Sure Al Anfal 8:9', w=1000))
     a = ss(48.6, 49.1, t)
-    overlay(f, q, W // 2 - q.shape[1] // 2, 520, a)
+    overlay(f, q, qx(q, 'q89'), QPOS['q89'][2], a)
     return f, ('Sure Al Anfal 8:9', a)
 
 TRS = [3.3, 10.0, 17.8, 29.9, 39.0, 46.9]
