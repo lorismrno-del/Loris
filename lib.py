@@ -1,5 +1,7 @@
 import cairo, math, random, json
-W, H, FPS = 1080, 1920, 30
+import os as _os
+W, H = 1080, 1920
+FPS = 50 if _os.environ.get('FPS50') else 30
 PI = math.pi
 
 # ---------------- utils ----------------
@@ -337,7 +339,7 @@ SKIN = '#c8946a'
 def person(ctx, x, y, s, t, facing=1, robe='#d8c8a8', robe2='#8a6a44', turban='#efe6d2', beard='#2a1d14', skin=SKIN,
            walk=0.0, phase=0.0, arms=(0.1, -0.05), elbows=(0.3, 0.3), tilt=0.0, prophet=False, head='turban',
            prop=None, prop2=None, cloak=None, alpha_=1.0, sun_dir=1, wind=0.6, seed=0, bob=True, lean=0.0,
-           shadow_a=0.28, scale_x=1.0, thrown=0.0, lift=0.0, swing=1.0):
+           shadow_a=0.28, scale_x=1.0, thrown=0.0, lift=0.0, swing=1.0, legs=False, hem_lift=0.0):
     u = s
     if alpha_ <= 0.01: return
     if alpha_ < 1: ctx.push_group()
@@ -354,12 +356,50 @@ def person(ctx, x, y, s, t, facing=1, robe='#d8c8a8', robe2='#8a6a44', turban='#
     ctx.translate(sw * (1 - walk), by)
     ctx.rotate(facing * (walk * 0.05 + lean))
     st = math.sin(phase)
-    # feet
-    for k, sgn in ((0, 1), (1, -1)):
-        fx = facing * st * sgn * 17 * u * walk + (6 if k else -6) * u
-        fy = -max(0, math.cos(phase) * sgn) * 7 * u * walk
-        src(ctx, '#3b2a1c'); ellipse(ctx, fx + facing * 5 * u, fy - 3 * u, 12 * u, 5 * u); ctx.fill()
-    shY = -232 * u + br; hemY = -10 * u
+    knees = []
+    if legs:
+        # echte Beine mit Schrittzyklus, hinteres Bein zuerst
+        LL = 70 * u; hipy = -128 * u
+        order = (-1, 1) if math.cos(phase) >= 0 else (1, -1)
+        for sgn in order:
+            p = phase + (0.0 if sgn > 0 else PI)
+            hxp = sgn * 11 * u
+            fx = hxp + facing * math.sin(p) * 19 * u * walk
+            fy = -by - max(0.0, math.cos(p)) * 13 * u * walk
+            dx, dy = fx - hxp, fy - hipy
+            d = max(1e-3, math.hypot(dx, dy)); d = min(d, 2 * LL - 1e-3)
+            ux, uy = dx / max(1e-3, math.hypot(dx, dy)), dy / max(1e-3, math.hypot(dx, dy))
+            mx, my = hxp + ux * d * 0.5, hipy + uy * d * 0.5
+            hgt = math.sqrt(max(0.0, LL * LL - (d * 0.5) ** 2))
+            nx, ny = -uy, ux
+            if facing * nx < 0: nx, ny = -nx, -ny
+            kx, ky = mx + nx * hgt, my + ny * hgt
+            col = shade(robe, -0.38) if sgn < 0 else shade(robe, -0.16)
+            ctx.set_line_cap(cairo.LINE_CAP_ROUND); ctx.set_line_join(cairo.LINE_JOIN_ROUND)
+            ax, ay = fx, fy - 13 * u          # Knoechel, der Schuh deckt das Beinende ab
+            src(ctx, shade(col, -0.35)); ctx.set_line_width(21 * u)
+            ctx.move_to(hxp, hipy); ctx.line_to(kx, ky); ctx.line_to(ax, ay); ctx.stroke()
+            src(ctx, col); ctx.set_line_width(17 * u)
+            ctx.move_to(hxp, hipy); ctx.line_to(kx, ky); ctx.line_to(ax, ay); ctx.stroke()
+            tilt_f = -facing * (max(0.0, math.cos(p)) * walk) * 0.5
+            ctx.save(); ctx.translate(fx, fy); ctx.rotate(tilt_f)
+            ctx.new_path()
+            ctx.move_to(-facing * 13 * u, -21 * u)
+            ctx.curve_to(-facing * 17 * u, -9 * u, -facing * 15 * u, 0, -facing * 7 * u, 0)
+            ctx.line_to(facing * 20 * u, 0)
+            ctx.curve_to(facing * 27 * u, -1 * u, facing * 25 * u, -10 * u, facing * 13 * u, -15 * u)
+            ctx.curve_to(facing * 4 * u, -19 * u, -facing * 4 * u, -22.5 * u, -facing * 13 * u, -21 * u)
+            ctx.close_path()
+            ctx.set_source(lingrad(0, -22 * u, 0, 0, [(0, '#5c452f'), (0.6, '#3d2c1d'), (1, '#241a11')])); ctx.fill()
+            src(ctx, '#17100a', 0.55); ctx.rectangle(-facing * 8 * u, -3.5 * u, facing * 28 * u, 3.5 * u); ctx.fill()
+            ctx.restore()
+            knees.append((kx, ky))
+    else:
+        for k, sgn in ((0, 1), (1, -1)):
+            fx = facing * st * sgn * 17 * u * walk + (6 if k else -6) * u
+            fy = -max(0, math.cos(phase) * sgn) * 7 * u * walk
+            src(ctx, '#3b2a1c'); ellipse(ctx, fx + facing * 5 * u, fy - 3 * u, 12 * u, 5 * u); ctx.fill()
+    shY = -232 * u + br; hemY = -10 * u - hem_lift * u
     lightc = shade(robe, 0.12); darkc = shade(robe, -0.3)
     # back arm
     def arm(side, a, e, front, hold=None):
@@ -380,16 +420,26 @@ def person(ctx, x, y, s, t, facing=1, robe='#d8c8a8', robe2='#8a6a44', turban='#
     arm(-facing, a1, elbows[1], False, prop2)
     # robe
     flut = wind * (math.sin(t * 3.1 + seed) * 0.5 + 0.7) * 7 * u
-    hl = -46 * u - facing * st * 6 * u * walk - facing * flut * 0.5
-    hr = 46 * u - facing * st * 6 * u * walk - facing * flut * 0.5 * 0
-    if facing < 0: hl, hr = hl + flut, hr + flut
-    else: hl, hr = hl - flut, hr - flut * 0.2
+    lag = math.sin(phase - 1.05)
+    sway = facing * lag * 9 * u * walk
+    wide = abs(math.sin(phase)) * 11 * u * walk
+    kbr = max([k[0] for k in knees], default=0.0); kbr = max(0.0, kbr - 9 * u)
+    kbl = min([k[0] for k in knees], default=0.0); kbl = min(0.0, kbl + 9 * u)
+    kyr = max([k[1] for k in knees if k[0] > 0], default=-62 * u)
+    kyl = max([k[1] for k in knees if k[0] < 0], default=-62 * u)
+    hl = min(-42 * u, -46 * u - wide + sway - facing * flut * 0.5 + kbl * 0.8)
+    hr = max(42 * u, 46 * u + wide + sway - facing * flut * 0.2 + kbr * 0.8)
+    ylt = hemY - facing * lag * 11 * u * walk
+    yrt = hemY + facing * lag * 11 * u * walk
+    wv1 = math.sin(t * 5.6 + seed) * 7 * u * (0.3 + walk * 1.0)
+    wv2 = math.sin(t * 5.6 + seed + 2.3) * 7 * u * (0.3 + walk * 1.0)
     ctx.move_to(-30 * u, shY)
-    ctx.curve_to(-38 * u, shY + 80 * u, -40 * u, hemY - 80 * u, hl, hemY)
-    ctx.curve_to(hl * 0.3, hemY + 5 * u, hr * 0.3, hemY + 5 * u, hr, hemY)
-    ctx.curve_to(40 * u, hemY - 80 * u, 38 * u, shY + 80 * u, 30 * u, shY)
+    ctx.curve_to(-38 * u, shY + 80 * u, -41 * u + sway * 0.3 + kbl * 1.7, kyl + 4 * u, hl, ylt)
+    ctx.curve_to(hl * 0.35, ylt + 11 * u + wv1, hr * 0.35, yrt + 11 * u + wv2, hr, yrt)
+    ctx.curve_to(41 * u + sway * 0.3 + kbr * 1.7, kyr + 4 * u, 38 * u, shY + 80 * u, 30 * u, shY)
     ctx.curve_to(10 * u, shY - 8 * u, -10 * u, shY - 8 * u, -30 * u, shY)
     ctx.close_path()
+    robe_path = ctx.copy_path()
     g = lingrad(-45 * u * sun_dir, 0, 45 * u * sun_dir, 0, [(0, darkc), (0.55, robe), (1, lightc)])
     ctx.set_source(g); ctx.fill_preserve()
     ctx.save(); ctx.clip()
@@ -397,9 +447,11 @@ def person(ctx, x, y, s, t, facing=1, robe='#d8c8a8', robe2='#8a6a44', turban='#
     src(ctx, shade(robe, -0.25), 0.35); ctx.set_line_width(2.5 * u)
     for k in range(4):
         fx = (-24 + k * 16) * u
+        fl = math.sin(phase - 0.8 + k * 0.35)
         ctx.move_to(fx, -130 * u)
-        ctx.curve_to(fx + math.sin(t * 2 + k) * 3 * u, -80 * u, fx - facing * st * 8 * u * walk, -40 * u,
-                     fx * 1.3 - facing * st * 10 * u * walk, hemY)
+        ctx.curve_to(fx + math.sin(t * 2.4 + k) * 4 * u, -80 * u,
+                     fx + facing * fl * 9 * u * walk, -40 * u,
+                     fx * 1.3 + facing * fl * 16 * u * walk + sway * 0.7, hemY + wv1 * 0.5)
         ctx.stroke()
     # bottom shade
     ctx.set_source(lingrad(0, -60 * u, 0, hemY, [(0, (0, 0, 0, 0)), (1, (0, 0, 0, 0.25))]))
@@ -409,19 +461,26 @@ def person(ctx, x, y, s, t, facing=1, robe='#d8c8a8', robe2='#8a6a44', turban='#
         cc = C(cloak)
         for sd in (-1, 1):
             ctx.move_to(sd * 30 * u, shY)
-            ctx.curve_to(sd * 44 * u, shY + 90 * u, sd * 50 * u, -60 * u, sd * 52 * u - facing * flut * 0.6, hemY - 4 * u)
-            ctx.line_to(sd * 22 * u - facing * flut * 0.3, hemY - 4 * u)
+            ctx.curve_to(sd * 44 * u, shY + 90 * u, sd * 50 * u + sway * 0.5, -60 * u,
+                         sd * 52 * u - facing * flut * 0.6 + sway, hemY - 4 * u + wv2 * 0.6)
+            ctx.line_to(sd * 22 * u - facing * flut * 0.3 + sway * 0.8, hemY - 4 * u + wv1 * 0.5)
             ctx.curve_to(sd * 20 * u, -100 * u, sd * 14 * u, shY + 40 * u, sd * 12 * u, shY - 4 * u)
             ctx.close_path()
             ctx.set_source(lingrad(sd * 50 * u, 0, sd * 12 * u, 0, [(0, shade(cc, -0.35)), (1, shade(cc, 0.05))]))
             ctx.fill()
         src(ctx, '#d9b35a'); ctx.set_line_width(2.5 * u)
         for sd in (-1, 1):
-            ctx.move_to(sd * 12 * u, shY - 4 * u); ctx.curve_to(sd * 14 * u, shY + 40 * u, sd * 20 * u, -100 * u, sd * 22 * u - facing * flut * 0.3, hemY - 4 * u)
+            ctx.move_to(sd * 12 * u, shY - 4 * u); ctx.curve_to(sd * 14 * u, shY + 40 * u, sd * 20 * u, -100 * u, sd * 22 * u - facing * flut * 0.3 + sway * 0.8, hemY - 4 * u + wv1 * 0.5)
             ctx.stroke()
-    # sash
-    src(ctx, robe2); ctx.move_to(-37 * u, -128 * u); ctx.curve_to(0, -122 * u, 0, -122 * u, 37 * u, -128 * u)
-    ctx.line_to(37 * u, -114 * u); ctx.curve_to(0, -108 * u, 0, -108 * u, -37 * u, -114 * u); ctx.close_path(); ctx.fill()
+    # sash, immer innerhalb des Gewands
+    ctx.save(); ctx.new_path(); ctx.append_path(robe_path); ctx.clip()
+    src(ctx, robe2); ctx.new_path()
+    ctx.move_to(-44 * u, -129 * u); ctx.curve_to(0, -122 * u, 0, -122 * u, 44 * u, -129 * u)
+    ctx.line_to(44 * u, -113 * u); ctx.curve_to(0, -106 * u, 0, -106 * u, -44 * u, -113 * u); ctx.close_path(); ctx.fill()
+    src(ctx, shade(robe2, -0.3), 0.6); ctx.new_path()
+    ctx.move_to(-44 * u, -114 * u); ctx.curve_to(0, -107 * u, 0, -107 * u, 44 * u, -114 * u)
+    ctx.set_line_width(2.5 * u); ctx.stroke()
+    ctx.restore()
     # head
     hx0, hy0 = facing * 3 * u, shY - 6 * u
     ctx.save(); ctx.translate(hx0, hy0); ctx.rotate(facing * tilt); ctx.translate(-hx0, -hy0)

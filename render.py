@@ -1,9 +1,13 @@
 import sys, importlib, subprocess, cairo, os
 from lib import W, H, FPS
 
+SCALE = float(os.environ.get('SCALE', '1'))
+
 def make_frame(mod, t):
-    surf = cairo.ImageSurface(cairo.FORMAT_ARGB32, W, H)
+    surf = cairo.ImageSurface(cairo.FORMAT_ARGB32, int(W * SCALE), int(H * SCALE))
     ctx = cairo.Context(surf)
+    if SCALE != 1:
+        ctx.scale(SCALE, SCALE)
     mod.frame(ctx, t)
     surf.flush()
     return surf
@@ -18,7 +22,7 @@ if __name__ == '__main__':
             s.write_to_png(f'test/{name}_{t:06.2f}.png')
     else:
         f0, f1, out = int(sys.argv[3]), int(sys.argv[4]), sys.argv[5]
-        p = subprocess.Popen(['ffmpeg', '-v', 'error', '-y', '-f', 'rawvideo', '-pix_fmt', 'bgra', '-s', f'{W}x{H}', '-r', str(FPS),
+        p = subprocess.Popen(['ffmpeg', '-v', 'error', '-y', '-f', 'rawvideo', '-pix_fmt', 'bgra', '-s', f'{int(W*SCALE)}x{int(H*SCALE)}', '-r', str(FPS),
                               '-i', '-', '-c:v', 'libx264', '-preset', 'faster', '-crf', '19', '-pix_fmt', 'yuv420p', out],
                              stdin=subprocess.PIPE)
         for f in range(f0, f1):

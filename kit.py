@@ -284,11 +284,18 @@ def book(ctx, x, y, s, t, glow_a=0.5, open_=1.0):
     for sd in (-1, 1):
         ctx.set_source(lingrad(x, 0, x + sd * 150 * u, 0, [(0, '#d8cdb0'), (1, '#f6f0e0')]))
         ctx.move_to(x, y - 6 * u); ctx.curve_to(x + sd * 50 * u, y - 30 * u * open_, x + sd * 110 * u, y - 30 * u * open_, x + sd * 145 * u, y - 14 * u * open_)
-        ctx.line_to(x + sd * 145 * u, y + 6 * u); ctx.curve_to(x + sd * 110 * u, y - 6 * u, x + sd * 50 * u, y - 6 * u, x, y + 10 * u); ctx.close_path(); ctx.fill()
-        src(ctx, '#6a5a3a', 0.5); ctx.set_line_width(2 * u)
-        for k in range(5):
-            yy = y - 16 * u + k * 5 * u
-            ctx.move_to(x + sd * 22 * u, yy - 6 * u); ctx.line_to(x + sd * 125 * u, yy - 4 * u); ctx.stroke()
+        ctx.line_to(x + sd * 145 * u, y + 6 * u); ctx.curve_to(x + sd * 110 * u, y - 6 * u, x + sd * 50 * u, y - 6 * u, x, y + 10 * u); ctx.close_path()
+        ctx.fill_preserve()
+        ctx.save(); ctx.clip()
+        src(ctx, '#6a5a3a', 0.4); ctx.set_line_width(1.8 * u)
+        for k in range(6):
+            yy = y - 2 * u + k * 3.4 * u
+            ctx.new_path()
+            ctx.move_to(x + sd * 16 * u, yy)
+            ctx.curve_to(x + sd * 55 * u, yy - 22 * u * open_, x + sd * 108 * u, yy - 23 * u * open_,
+                         x + sd * 138 * u, yy - 9 * u * open_)
+            ctx.stroke()
+        ctx.restore(); ctx.new_path()
 
 def oil_lamp(ctx, x, y, s, t, lit=1.0):
     u = s
